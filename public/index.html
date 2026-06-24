@@ -398,55 +398,56 @@
                 html5QrcodeScanner.clear().catch(err => console.log(err));
             }
 
-            // Configuração avançada focada em CÓDIGO DE BARRAS (e não em QR Code)
             html5QrcodeScanner = new Html5QrcodeScanner("reader", {
-                fps: 20, // Aumenta a velocidade de captura de quadros
+                fps: 20, // Captura mais quadros por segundo para não perder o foco
                 qrbox: function (viewfinderWidth, viewfinderHeight) {
-                    // Cria uma linha horizontal bem focada, ideal para barras lineares
+                    // Formato ideal para CÓDIGO DE BARRAS COMUM:
+                    // Uma faixa larga na horizontal e bem fina na vertical
                     return {
-                        width: Math.min(viewfinderWidth * 0.85, 320),
-                        height: 80
+                        width: Math.min(viewfinderWidth * 0.9, 350),
+                        height: 70
                     };
                 },
                 rememberLastUsedCamera: true,
-                // Força a biblioteca a aceitar formatos tradicionais de código de barras
+                // Habilita TODOS os formatos de códigos de barras comuns do mercado
                 formatsToSupport: [
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.ITF
+                    Html5QrcodeSupportedFormats.CODE_128, // Padrão em patrimônios e logística
+                    Html5QrcodeSupportedFormats.CODE_39,  // Muito comum em etiquetas industriais
+                    Html5QrcodeSupportedFormats.EAN_13,   // Produtos comerciais comuns
+                    Html5QrcodeSupportedFormats.EAN_8,    // Produtos comerciais pequenos
+                    Html5QrcodeSupportedFormats.UPC_A,    // Padrão americano, mas comum em eletrônicos
+                    Html5QrcodeSupportedFormats.ITF       // Códigos de caixas de papelão/boletos
                 ],
                 experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true // Usa o motor nativo do celular se disponível
+                    useBarCodeDetectorIfSupported: true // Ativa o acelerador nativo do Android/iOS se disponível
                 }
             });
 
             html5QrcodeScanner.render((decodedText) => {
-                // Toca um bipezinho virtual usando o som do próprio navegador (Feedback para o usuário)
+                // Feedback sonoro (Bip) ao conseguir ler
                 try {
                     const context = new (window.AudioContext || window.webkitAudioContext)();
                     const osc = context.createOscillator();
                     osc.type = "sine";
-                    osc.frequency.setValueAtTime(1000, context.currentTime);
+                    osc.frequency.setValueAtTime(1200, context.currentTime);
                     osc.connect(context.destination);
                     osc.start();
-                    osc.stop(context.currentTime + 0.1);
-                } catch (e) { console.log("Áudio não suportado"); }
+                    osc.stop(context.currentTime + 0.08);
+                } catch (e) { }
 
-                // Preenche os campos
+                // Preenche os campos do seu formulário
                 document.getElementById('barcode').value = decodedText;
 
-                // Desliga a câmera
+                // Fecha a câmera
                 html5QrcodeScanner.clear().then(() => {
                     readerElement.style.display = 'none';
                 }).catch(err => console.error(err));
 
-                // Alimenta a busca automática
+                // Faz a busca automática no banco do Firebase
                 document.getElementById('searchQuery').value = decodedText;
                 loadItems();
             }, (error) => {
-                // Silencioso durante a varredura
+                // Ignora erros de varredura enquanto procura o código
             });
         }
 
