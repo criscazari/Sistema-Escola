@@ -39,7 +39,7 @@
             border-radius: 8px;
             margin-bottom: 20px;
 
-          
+
         }
 
         .container {
@@ -176,14 +176,35 @@
     <header>
         <h1>Etec de Ilha Solteira</h1>
         <p>Sistema de Catalogação e Inventário de Bens</p>
-          <button onclick="logout()"
-            style="
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            padding: 8px 15px;
-            cursor: pointer;
-            "> Sair </button>
+        auth.onAuthStateChanged((user) => {
+
+        if(user){
+
+        document.getElementById("loginScreen")
+        .style.display = "none";
+
+        document.getElementById("mainSystem")
+        .style.display = "block";
+
+        document.getElementById("btnLogout")
+        .style.display = "block";
+
+        loadItems();
+
+        } else {
+
+        document.getElementById("loginScreen")
+        .style.display = "block";
+
+        document.getElementById("mainSystem")
+        .style.display = "none";
+
+        document.getElementById("btnLogout")
+        .style.display = "none";
+
+        }
+
+        });
     </header>
 
     <div id="loginScreen" class="card" style="max-width:400px; margin:50px auto;">
