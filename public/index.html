@@ -390,65 +390,93 @@
         // ==========================================
         // LÓGICA DO SCANNER DE CÓDIGO DE BARRAS
         // ==========================================
-        function startScanner() {
+        // Declarado fora da função para manter o escopo global/módulo
+        let html5QrcodeScanner = null;
+
+        async function startScanner() {
             const readerElement = document.getElementById('reader');
             readerElement.style.display = 'block';
 
+            // 1. Correção Assíncrona: Espera o scanner antigo fechar de verdade antes de prosseguir
             if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear().catch(err => console.log(err));
+                try {
+                    await html5QrcodeScanner.clear();
+                } catch (err) {
+                    console.warn("Erro ao limpar scanner anterior:", err);
+                }
             }
 
             html5QrcodeScanner = new Html5QrcodeScanner("reader", {
-                fps: 20, // Captura mais quadros por segundo para não perder o foco
+                fps: 20,
                 qrbox: function (viewfinderWidth, viewfinderHeight) {
-                    // Formato ideal para CÓDIGO DE BARRAS COMUM:
-                    // Uma faixa larga na horizontal e bem fina na vertical
-                    return {
-                        width: Math.min(viewfinderWidth * 0.9, 350),
-                        height: 70
-                    };
+                    // Melhoria: Proporção dinâmica adaptável (mantém fino, mas funcional em celulares)
+                    const width = Math.min(viewfinderWidth * 0.85, 400);
+                    const height = Math.min(viewfinderHeight * 0.25, 100);
+                    return { width, height };
                 },
                 rememberLastUsedCamera: true,
-                // Habilita TODOS os formatos de códigos de barras comuns do mercado
                 formatsToSupport: [
-                    Html5QrcodeSupportedFormats.CODE_128, // Padrão em patrimônios e logística
-                    Html5QrcodeSupportedFormats.CODE_39,  // Muito comum em etiquetas industriais
-                    Html5QrcodeSupportedFormats.EAN_13,   // Produtos comerciais comuns
-                    Html5QrcodeSupportedFormats.EAN_8,    // Produtos comerciais pequenos
-                    Html5QrcodeSupportedFormats.UPC_A,    // Padrão americano, mas comum em eletrônicos
-                    Html5QrcodeSupportedFormats.ITF       // Códigos de caixas de papelão/boletos
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.ITF
                 ],
                 experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true // Ativa o acelerador nativo do Android/iOS se disponível
+                    useBarCodeDetectorIfSupported: true
                 }
             });
 
-            html5QrcodeScanner.render((decodedText) => {
-                // Feedback sonoro (Bip) ao conseguir ler
-                try {
-                    const context = new (window.AudioContext || window.webkitAudioContext)();
-                    const osc = context.createOscillator();
-                    osc.type = "sine";
-                    osc.frequency.setValueAtTime(1200, context.currentTime);
-                    osc.connect(context.destination);
-                    osc.start();
-                    osc.stop(context.currentTime + 0.08);
-                } catch (e) { }
+            html5QrcodeScanner.render(async (decodedText) => {
+                // 2. Feedback sonoro otimizado
+                tocarBip();
 
-                // Preenche os campos do seu formulário
+                // Preenche os campos do formulário
                 document.getElementById('barcode').value = decodedText;
-
-                // Fecha a câmera
-                html5QrcodeScanner.clear().then(() => {
-                    readerElement.style.display = 'none';
-                }).catch(err => console.error(err));
-
-                // Faz a busca automática no banco do Firebase
                 document.getElementById('searchQuery').value = decodedText;
+
+                // 3. Fecha a câmera com segurança antes de buscar no Firebase
+                try {
+                    await html5QrcodeScanner.clear();
+                    readerElement.style.display = 'none';
+                } catch (err) {
+                    console.error("Erro ao fechar a câmera:", err);
+                }
+
+                // Executa a busca no Firebase depois que a interface/câmera já foi liberada
                 loadItems();
+
             }, (error) => {
-                // Ignora erros de varredura enquanto procura o código
+                // Ignora erros de varredura contínua
             });
+        }
+
+        // Função auxiliar isolada para o Bip (evita vazamento de memória e travamento de áudio)
+        function tocarBip() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+
+                const context = new AudioCtx();
+                const osc = context.createOscillator();
+                const gain = context.createGain(); // Controle de volume opcional
+
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(1200, context.currentTime);
+
+                // Suaviza o estalo do áudio no final
+                gain.gain.setValueAtTime(0.1, context.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.08);
+
+                osc.connect(gain);
+                gain.connect(context.destination);
+
+                osc.start();
+                osc.stop(context.currentTime + 0.08);
+            } catch (e) {
+                console.log("Áudio bloqueado pelo navegador ou não suportado.");
+            }
         }
 
         // ==========================================
