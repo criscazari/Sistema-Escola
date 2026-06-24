@@ -394,90 +394,62 @@
         
 
         async function startScanner() {
-            const readerElement = document.getElementById('reader');
-            readerElement.style.display = 'block';
+    const readerElement = document.getElementById('reader');
+    readerElement.style.display = 'block';
 
-            // 1. Correção Assíncrona: Espera o scanner antigo fechar de verdade antes de prosseguir
-            if (html5QrcodeScanner) {
-                try {
-                    await html5QrcodeScanner.clear();
-                } catch (err) {
-                    console.warn("Erro ao limpar scanner anterior:", err);
-                }
-            }
+    if (html5QrcodeScanner) {
+        try {
+            await html5QrcodeScanner.clear();
+        } catch (err) {
+            console.warn("Erro ao limpar scanner anterior:", err);
+        }
+    }
 
-            html5QrcodeScanner = new Html5QrcodeScanner("reader", {
-                fps: 20,
-                qrbox: function (viewfinderWidth, viewfinderHeight) {
-                    // Melhoria: Proporção dinâmica adaptável (mantém fino, mas funcional em celulares)
-                    const width = Math.min(viewfinderWidth * 0.85, 400);
-                    const height = Math.min(viewfinderHeight * 0.25, 100);
-                    return { width, height };
-                },
-                rememberLastUsedCamera: true,
-                formatsToSupport: [
-                    Html5QrcodeSupportedFormats.CODE_128,
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.ITF
-                ],
-                experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true
-                }
-            });
+    // CONFIGURAÇÃO RESTRITA E APERFEIÇOADA
+    html5QrcodeScanner = new Html5QrcodeScanner("reader", {
+        fps: 30, // Aumentado para 30fps para capturar o foco mais rápido
+        qrbox: function (viewfinderWidth, viewfinderHeight) {
+            // Um pouco mais alto para garantir que o foco do celular pegue as barras inteiras
+            return {
+                width: Math.min(viewfinderWidth * 0.85, 380),
+                height: 120 
+            };
+        },
+        rememberLastUsedCamera: true,
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39
+        ],
+        // O segredo está aqui: injetamos as restrições de alta resolução no núcleo do scanner
+        videoConstraints: {
+            facingMode: "environment",
+            width: { ideal: 1920 }, // Força Full HD para detectar barras finas
+            height: { ideal: 1080 },
+            focusMode: "continuous" // Força o foco contínuo se o navegador suportar
+        },
+        experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true 
+        }
+    });
 
-            html5QrcodeScanner.render(async (decodedText) => {
-                // 2. Feedback sonoro otimizado
-                tocarBip();
+    html5QrcodeScanner.render(async (decodedText) => {
+        tocarBip();
 
-                // Preenche os campos do formulário
-                document.getElementById('barcode').value = decodedText;
-                document.getElementById('searchQuery').value = decodedText;
+        document.getElementById('barcode').value = decodedText;
+        document.getElementById('searchQuery').value = decodedText;
 
-                // 3. Fecha a câmera com segurança antes de buscar no Firebase
-                try {
-                    await html5QrcodeScanner.clear();
-                    readerElement.style.display = 'none';
-                } catch (err) {
-                    console.error("Erro ao fechar a câmera:", err);
-                }
-
-                // Executa a busca no Firebase depois que a interface/câmera já foi liberada
-                loadItems();
-
-            }, (error) => {
-                // Ignora erros de varredura contínua
-            });
+        try {
+            await html5QrcodeScanner.clear();
+            readerElement.style.display = 'none';
+        } catch (err) {
+            console.error("Erro ao fechar a câmera:", err);
         }
 
-        // Função auxiliar isolada para o Bip (evita vazamento de memória e travamento de áudio)
-        function tocarBip() {
-            try {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx) return;
-
-                const context = new AudioCtx();
-                const osc = context.createOscillator();
-                const gain = context.createGain(); // Controle de volume opcional
-
-                osc.type = "sine";
-                osc.frequency.setValueAtTime(1200, context.currentTime);
-
-                // Suaviza o estalo do áudio no final
-                gain.gain.setValueAtTime(0.1, context.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.08);
-
-                osc.connect(gain);
-                gain.connect(context.destination);
-
-                osc.start();
-                osc.stop(context.currentTime + 0.08);
-            } catch (e) {
-                console.log("Áudio bloqueado pelo navegador ou não suportado.");
-            }
-        }
+        loadItems();
+    }, (error) => {
+        // Ignora erros comuns de varredura
+    });
+}
 
         // ==========================================
         // SALVAR ITEM NO FIRESTORE (CREATE)
