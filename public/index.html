@@ -176,35 +176,16 @@
     <header>
         <h1>Etec de Ilha Solteira</h1>
         <p>Sistema de Catalogação e Inventário de Bens</p>
-        auth.onAuthStateChanged((user) => {
-
-        if(user){
-
-        document.getElementById("loginScreen")
-        .style.display = "none";
-
-        document.getElementById("mainSystem")
-        .style.display = "block";
-
-        document.getElementById("btnLogout")
-        .style.display = "block";
-
-        loadItems();
-
-        } else {
-
-        document.getElementById("loginScreen")
-        .style.display = "block";
-
-        document.getElementById("mainSystem")
-        .style.display = "none";
-
-        document.getElementById("btnLogout")
-        .style.display = "none";
-
-        }
-
-        });
+        <button id="btnLogout" onclick="logout()" style="
+        display:none;
+        position:absolute;
+        right:20px;
+        top:20px;
+        padding:8px 15px;
+        cursor:pointer;
+    ">
+            Sair
+        </button>
     </header>
 
     <div id="loginScreen" class="card" style="max-width:400px; margin:50px auto;">
@@ -383,6 +364,22 @@
             }
 
         }
+        document.addEventListener("keydown", function (event) {
+
+            if (event.key === "Enter") {
+
+                const loginScreen =
+                    document.getElementById("loginScreen");
+
+                if (loginScreen.style.display !== "none") {
+
+                    login();
+
+                }
+
+            }
+
+        });
 
         function logout() {
 
@@ -532,6 +529,9 @@
                 document.getElementById("mainSystem")
                     .style.display = "block";
 
+                document.getElementById("btnLogout")
+                    .style.display = "block";
+
                 loadItems();
 
             } else {
@@ -540,6 +540,9 @@
                     .style.display = "block";
 
                 document.getElementById("mainSystem")
+                    .style.display = "none";
+
+                document.getElementById("btnLogout")
                     .style.display = "none";
 
             }
