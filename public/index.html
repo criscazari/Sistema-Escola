@@ -9,7 +9,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
 
     <style>
         :root {
@@ -40,11 +41,9 @@
             border-radius: 8px;
             margin-bottom: 20px;
             position: relative;
-            /* Garante que o cabeçalho cresça se o texto quebrar de linha no celular */
             min-height: 80px;
         }
 
-        /* Deixa a tabela responsiva: cria uma barra de rolagem lateral apenas na tabela se ela não couber no celular */
         .card {
             background: white;
             padding: 20px;
@@ -52,7 +51,6 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
             overflow-x: auto;
-            /* <-- ISSO VAI SALVAR A TABELA NO CELULAR */
         }
 
         table {
@@ -61,7 +59,6 @@
             margin-top: 15px;
             background: white;
             min-width: 600px;
-            /* Garante que a tabela mantenha a estrutura legível ao rolar de lado */
         }
 
         h2 {
@@ -71,7 +68,6 @@
             padding-bottom: 5px;
         }
 
-        /* Formulários e Inputs */
         .form-group {
             margin-bottom: 15px;
             display: flex;
@@ -122,23 +118,36 @@
             gap: 15px;
         }
 
-        /* Câmera/Scanner */
+        /* Estilização da janela do Scanner adaptada para a QuaggaJS */
         #reader {
             width: 100%;
-            max-width: 100%;
-            /* Adapta ao tamanho total da caixinha no mobile */
+            max-width: 500px;
+            height: 280px;
             margin: 15px auto;
             background: #000;
             border-radius: 8px;
             overflow: hidden;
+            position: relative;
         }
 
-        /* Tabela de Dados */
-        table {
+        /* O elemento de vídeo gerado pela Quagga se ajustará aqui */
+        #reader video {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-            background: white;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Desenha uma linha de mira vermelha central para ajudar o usuário a alinhar o código */
+        #reader::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 5%;
+            width: 90%;
+            height: 2px;
+            background-color: red;
+            box-shadow: 0 0 4px red;
+            z-index: 10;
         }
 
         th,
@@ -160,12 +169,10 @@
         @media (max-width: 600px) {
             header {
                 padding-top: 45px;
-                /* Abre espaço no topo para o botão não cobrir o texto */
             }
 
             header h1 {
                 font-size: 20px;
-                /* Diminui um pouco a letra do título principal no celular */
             }
 
             header p {
@@ -174,7 +181,6 @@
 
             #btnLogout {
                 top: 10px !important;
-                /* Move o botão para o topo superior direito no celular */
                 bottom: auto !important;
                 right: 10px !important;
                 padding: 4px 10px !important;
@@ -182,7 +188,6 @@
             }
         }
 
-        /* Regras de Impressão (Relatórios) */
         @media print {
             body {
                 background: white;
@@ -278,7 +283,7 @@
                         <div style="display: flex; gap: 5px;">
                             <input type="text" id="barcode" style="flex: 1;"
                                 placeholder="Aproxime o leitor ou use a câmera">
-                            <button type="button" class="btn btn-sec" onclick="startScanner()">📷 Ler</button>
+                            <button type="button" id="btnScanTrigger" class="btn btn-sec" onclick="startScanner()">📷 Ler</button>
                         </div>
                     </div>
                 </div>
@@ -346,15 +351,14 @@
             appId: "1:328152429744:web:8a0b7985be8c9e25cd3775"
         };
 
-        // Inicializa o Firebase
         firebase.initializeApp(firebaseConfig);
 
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // let html5QrcodeScanner = null;
-        let videoStream = null;
-        let animationFrameId = null;
+        // Controladores globais de estado do Scanner (Quagga)
+        let isScanning = false;
+
         // ==========================================
         // LOGIN
         // ==========================================
@@ -382,117 +386,107 @@
             auth.signOut();
         }
 
-        // Mostrar/Ocultar campos de patrimônio
         function togglePatrimonyFields() {
             const hasPatrimony = document.getElementById('hasPatrimony').checked;
             document.getElementById('patrimonyFields').style.display = hasPatrimony ? 'grid' : 'none';
+            if(!hasPatrimony) stopScanner();
         }
 
         // ==========================================
-        // LÓGICA DO SCANNER DE CÓDIGO DE BARRAS
+        // NOVA LÓGICA DO SCANNER (QUAGGA JS)
         // ==========================================
-        async function startScanner() {
-            // Verifica se o navegador do usuário suporta a API nativa de código de barras
-            if (!('BarcodeDetector' in window)) {
-                alert("Seu navegador não suporta a detecção nativa de código de barras. Use o Chrome no Android ou Safari no iOS atualizado.");
+        function startScanner() {
+            const readerElement = document.getElementById('reader');
+            const btnTrigger = document.getElementById('btnScanTrigger');
+
+            // Se já estiver rodando, o botão funciona como "Alternar/Desligar"
+            if (isScanning) {
+                stopScanner();
                 return;
             }
 
-            const readerElement = document.getElementById('reader');
             readerElement.style.display = 'block';
+            btnTrigger.innerText = "🛑 Parar";
+            isScanning = true;
 
-            // Limpa instâncias anteriores se o botão for clicado duas vezes
-            stopScanner();
-
-            // Cria dinamicamente um elemento de vídeo para capturar a câmera dentro do seu 'reader'
-            let video = document.getElementById('scanner-video');
-            if (!video) {
-                video = document.createElement('video');
-                video.id = 'scanner-video';
-                video.setAttribute('playsinline', true); // Obrigatório para iOS
-                video.style.width = '100%';
-                video.style.height = '100%';
-                video.style.objectFit = 'cover';
-                readerElement.appendChild(video);
-            }
-
-            try {
-                // 1. Liga a câmera do celular em alta resolução
-                videoStream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: "environment",
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: readerElement,
+                    constraints: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: "environment" // Força o uso da câmera traseira
                     },
-                    audio: false
-                });
-
-                video.srcObject = videoStream;
-                await video.play();
-
-                // 2. Inicializa o Detector Nativo configurado para os formatos da sua etiqueta
-                const barcodeDetector = new BarcodeDetector({
-                    formats: ['code_39', 'code_128']
-                });
-
-                // 3. Inicia o loop de varredura quadro a quadro
-                async function scanFrame() {
-                    if (video.paused || video.ended) return;
-
-                    try {
-                        // Passa o elemento de vídeo direto para o detector analisar o frame atual
-                        const barcodes = await barcodeDetector.detect(video);
-
-                        if (barcodes.length > 0) {
-                            // Código encontrado! Pega o valor do primeiro detectado
-                            const decodedText = barcodes[0].rawValue;
-
-                            tocarBip();
-
-                            // Preenche seus inputs do formulário
-                            document.getElementById('barcode').value = decodedText;
-                            document.getElementById('searchQuery').value = decodedText;
-
-                            // Desliga tudo com segurança
-                            stopScanner();
-                            readerElement.style.display = 'none';
-
-                            // Executa a busca no Firebase
-                            loadItems();
-                            return; // Encerra o loop
-                        }
-                    } catch (err) {
-                        console.error("Erro durante a varredura do frame:", err);
-                    }
-
-                    // Se não achou nada neste frame, chama o próximo frame da câmera
-                    animationFrameId = requestAnimationFrame(scanFrame);
+                    singleChannel: false // Falso permite processamento de cor se necessário
+                },
+                locator: {
+                    patchSize: "medium",
+                    halfSample: true
+                },
+                numOfWorkers: 2,
+                decoder: {
+                    // Focado estritamente nos padrões de etiquetas patrimoniais lineares 1D
+                    readers: ["code_128_reader", "code_39_reader"]
+                },
+                locate: true // Crucial: Ativa o localizador de barras na imagem antes de decodificar
+            }, function (err) {
+                if (err) {
+                    console.error("Erro ao inicializar o Quagga:", err);
+                    alert("Não foi possível acessar a câmera.");
+                    stopScanner();
+                    return;
                 }
+                Quagga.start();
+            });
 
-                // Dá a largada no loop de leitura
-                animationFrameId = requestAnimationFrame(scanFrame);
+            // Evento disparado quando o código é lido corretamente
+            Quagga.onDetected((data) => {
+                if (!data || !data.codeResult) return;
 
-            } catch (err) {
-                console.error("Erro ao iniciar a câmera nativa:", err);
-                alert("Não foi possível acessar a câmera. Verifique as permissões.");
-            }
+                const decodedText = data.codeResult.code;
+
+                tocarBip();
+
+                // Preenche os campos do formulário com o dado limpo puro
+                document.getElementById('barcode').value = decodedText;
+                document.getElementById('searchQuery').value = decodedText;
+
+                // Desliga a câmera e esconde a interface de leitura
+                stopScanner();
+
+                // Executa a busca automática no Firebase
+                loadItems();
+            });
         }
 
-        // Função para desligar a câmera e limpar a memória com segurança
         function stopScanner() {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
-                videoStream = null;
-            }
-            const video = document.getElementById('scanner-video');
-            if (video) {
-                video.srcObject = null;
-                video.remove();
-            }
+            const readerElement = document.getElementById('reader');
+            const btnTrigger = document.getElementById('btnScanTrigger');
+            
+            try {
+                Quagga.stop();
+            } catch(e) {}
+
+            if(readerElement) readerElement.style.display = 'none';
+            if(btnTrigger) btnTrigger.innerText = "📷 Ler";
+            isScanning = false;
+        }
+
+        // Feedback Sonoro Isolado
+        function tocarBip() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const context = new AudioCtx();
+                const osc = context.createOscillator();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(1200, context.currentTime);
+                osc.connect(context.destination);
+                osc.start();
+                osc.stop(context.currentTime + 0.08);
+            } catch (e) { }
         }
 
         // ==========================================
@@ -591,7 +585,7 @@
                     loadItems();
                 } catch (error) {
                     console.error("Erro ao excluir: ", error);
-                    alert("Não foi possível excluir o item.");
+                    alert("Não foi possível excluir the item.");
                 }
             }
         }
@@ -613,7 +607,7 @@
                     codigoBarras: novoCodigoBarras
                 });
 
-                alert("Item atualizado com sucesso!");
+                alert("Item updated com sucesso!");
                 loadItems();
             } catch (error) {
                 console.error("Erro ao atualizar: ", error);
@@ -653,10 +647,10 @@
                 document.getElementById("loginScreen").style.display = "block";
                 document.getElementById("mainSystem").style.display = "none";
                 document.getElementById("btnLogout").style.display = "none";
+                stopScanner();
             }
         });
 
-        // Inicializar a tabela ao carregar a página
         window.onload = loadItems;
     </script>
 </body>
