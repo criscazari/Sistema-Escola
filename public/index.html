@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,57 +9,206 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    
+
     <style>
         :root {
-            --primary-color: #b30000; /* Vermelho institucional Centro Paula Souza */
+            --primary-color: #b30000;
+            /* Vermelho institucional Centro Paula Souza */
             --dark-color: #2c3e50;
             --light-color: #f4f6f9;
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--light-color); color: #333; padding: 20px; }
-        header { background-color: var(--primary-color); color: white; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2 { margin-bottom: 15px; color: var(--dark-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 5px; }
-        
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-color);
+            color: #333;
+            padding: 20px;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+
+          
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+            color: var(--dark-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 5px;
+        }
+
         /* Formulários e Inputs */
-        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
-        label { font-weight: bold; margin-bottom: 5px; }
-        input, select, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
-        .btn { background-color: var(--primary-color); color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
-        .btn:hover { background-color: #800000; }
-        .btn-sec { background-color: var(--dark-color); }
-        .btn-sec:hover { background-color: #1a252f; }
-        .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1-fraction)); gap: 15px; }
-        
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input,
+        select,
+        textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #800000;
+        }
+
+        .btn-sec {
+            background-color: var(--dark-color);
+        }
+
+        .btn-sec:hover {
+            background-color: #1a252f;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1-fraction));
+            gap: 15px;
+        }
+
         /* Câmera/Scanner */
-        #reader { width: 100%; max-width: 400px; margin: 15px auto; background: #000; border-radius: 8px; overflow: hidden; }
-        
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            margin: 15px auto;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
         /* Tabela de Dados */
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: var(--dark-color); color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--dark-color);
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
         /* Regras de Impressão (Relatórios) */
         @media print {
-            body { background: white; padding: 0; }
-            .no-print { display: none !important; }
-            .card { box-shadow: none; padding: 0; }
-            th { background-color: #333 !important; color: white !important; }
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .card {
+                box-shadow: none;
+                padding: 0;
+            }
+
+            th {
+                background-color: #333 !important;
+                color: white !important;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <header>
         <h1>Etec de Ilha Solteira</h1>
         <p>Sistema de Catalogação e Inventário de Bens</p>
+          <button onclick="logout()"
+            style="
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            padding: 8px 15px;
+            cursor: pointer;
+            "> Sair </button>
     </header>
 
-    <div class="container">
-        
+    <div id="loginScreen" class="card" style="max-width:400px; margin:50px auto;">
+
+        <h2>Login do Sistema</h2>
+
+        <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="loginEmail">
+        </div>
+
+        <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="loginPassword">
+        </div>
+
+        <button class="btn" onclick="login()">
+            Entrar
+        </button>
+
+
+    </div>
+
+    <div class="container" id="mainSystem" style="display:none;">
+
         <div class="card no-print">
             <h2>Cadastrar Novo Item</h2>
             <form id="itemForm">
@@ -82,7 +232,8 @@
                 <div class="row" style="margin-top: 10px;">
                     <div class="form-group">
                         <label style="flex-direction: row; gap: 10px; cursor: pointer;">
-                            <input type="checkbox" id="hasPatrimony" onchange="togglePatrimonyFields()"> Possui Patrimônio / Código de Barras?
+                            <input type="checkbox" id="hasPatrimony" onchange="togglePatrimonyFields()"> Possui
+                            Patrimônio / Código de Barras?
                         </label>
                     </div>
                 </div>
@@ -95,7 +246,8 @@
                     <div class="form-group">
                         <label for="barcode">Código de Barras</label>
                         <div style="display: flex; gap: 5px;">
-                            <input type="text" id="barcode" style="flex: 1;" placeholder="Aproxime o leitor ou use a câmera">
+                            <input type="text" id="barcode" style="flex: 1;"
+                                placeholder="Aproxime o leitor ou use a câmera">
                             <button type="button" class="btn btn-sec" onclick="startScanner()">📷 Ler</button>
                         </div>
                     </div>
@@ -111,7 +263,7 @@
 
         <div class="card">
             <h2 class="no-print">Consulta de Itens e Relatórios</h2>
-            
+
             <div class="row no-print" style="margin-bottom: 20px;">
                 <div class="form-group">
                     <label for="searchQuery">Pesquisar por Nome ou Código de Barras</label>
@@ -129,7 +281,8 @@
                 </div>
                 <div class="form-group" style="justify-content: flex-end; flex-direction: row; gap: 10px;">
                     <button class="btn btn-sec" onclick="window.print()">🖨️ Imprimir Relatório</button>
-                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar Backup</button>
+                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar
+                        Backup</button>
                 </div>
             </div>
 
@@ -143,7 +296,7 @@
                     </tr>
                 </thead>
                 <tbody id="itemsTableBody">
-                    </tbody>
+                </tbody>
             </table>
         </div>
 
@@ -153,29 +306,68 @@
         // ==========================================
         // CONFIGURAÇÃO DO FIREBASE (INSIRA SEUS DADOS)
         // ==========================================
-       // Import the functions you need from the SDKs you need
-            //import { initializeApp } from "firebase/app";
-            // TODO: Add SDKs for Firebase products that you want to use
-            // https://firebase.google.com/docs/web/setup#available-libraries
+        // Import the functions you need from the SDKs you need
+        //import { initializeApp } from "firebase/app";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
 
-            // Your web app's Firebase configuration
-                const firebaseConfig = {
-                apiKey: "AIzaSyB9HtjLT4gGhCOV4RsFQ2cPipW6Y53kcug",
-                authDomain: "sistemaescola-f74c2.firebaseapp.com",
-                projectId: "sistemaescola-f74c2",
-                storageBucket: "sistemaescola-f74c2.firebasestorage.app",
-                messagingSenderId: "328152429744",
-                appId: "1:328152429744:web:8a0b7985be8c9e25cd3775"
-};
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB9HtjLT4gGhCOV4RsFQ2cPipW6Y53kcug",
+            authDomain: "sistemaescola-f74c2.firebaseapp.com",
+            projectId: "sistemaescola-f74c2",
+            storageBucket: "sistemaescola-f74c2.firebasestorage.app",
+            messagingSenderId: "328152429744",
+            appId: "1:328152429744:web:8a0b7985be8c9e25cd3775"
+        };
 
-// Initialize Firebase
-//const app = initializeApp(firebaseConfig);
+        // Initialize Firebase
+        //const app = initializeApp(firebaseConfig);
 
         // Inicializa o Firebase
         firebase.initializeApp(firebaseConfig);
+
         const db = firebase.firestore();
+        const auth = firebase.auth();
+
         let html5QrcodeScanner = null;
 
+
+        // ==========================================
+        // LOGIN
+        // ==========================================
+
+        async function login() {
+
+            const email =
+                document.getElementById("loginEmail").value;
+
+            const password =
+                document.getElementById("loginPassword").value;
+
+            try {
+
+                await auth.signInWithEmailAndPassword(
+                    email,
+                    password
+                );
+
+            } catch (error) {
+
+                alert(
+                    "Erro ao entrar:\n\n" +
+                    error.message
+                );
+
+            }
+
+        }
+
+        function logout() {
+
+            auth.signOut();
+
+        }
         // Mostrar/Ocultar campos de patrimônio
         function togglePatrimonyFields() {
             const hasPatrimony = document.getElementById('hasPatrimony').checked;
@@ -189,8 +381,8 @@
             const readerElement = document.getElementById('reader');
             readerElement.style.display = 'block';
 
-            html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-                fps: 10, 
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", {
+                fps: 10,
                 qrbox: { width: 250, height: 100 } // Formato retangular ideal para barras
             });
 
@@ -198,7 +390,7 @@
                 document.getElementById('barcode').value = decodedText;
                 html5QrcodeScanner.clear(); // Para a câmera após a leitura bem-sucedida
                 readerElement.style.display = 'none';
-                
+
                 // Se estiver buscando, pode disparar a busca automática aqui
                 document.getElementById('searchQuery').value = decodedText;
                 loadItems();
@@ -233,11 +425,11 @@
                 document.getElementById('itemForm').reset();
                 togglePatrimonyFields();
                 loadItems(); // Atualiza a tabela
-                     } catch (error) {
-                         console.error(error);
+            } catch (error) {
+                console.error(error);
 
-                          alert( "Erro: " + error.code + "\n\n" + error.message);
-                     }
+                alert("Erro: " + error.code + "\n\n" + error.message);
+            }
         });
 
         // ==========================================
@@ -251,7 +443,7 @@
 
             try {
                 let reference = db.collection("itens");
-                
+
                 // Filtro direto por categoria no banco se selecionado
                 if (filterCategory) {
                     reference = reference.where("categoria", "==", filterCategory);
@@ -267,12 +459,12 @@
 
                 snapshot.forEach(doc => {
                     const item = doc.data();
-                    
+
                     // Filtro de pesquisa textual (Nome, Patrimônio ou Código de Barras)
-                    if (item.nome.toLowerCase().includes(queryText) || 
-                        item.patrimonio.toLowerCase().includes(queryText) || 
+                    if (item.nome.toLowerCase().includes(queryText) ||
+                        item.patrimonio.toLowerCase().includes(queryText) ||
                         item.codigoBarras.toLowerCase().includes(queryText)) {
-                        
+
                         const row = `
                             <tr>
                                 <td><b>${item.nome}</b></td>
@@ -309,9 +501,32 @@
                 alert("Falha ao gerar arquivo de backup.");
             }
         }
+        auth.onAuthStateChanged((user) => {
 
+            if (user) {
+
+                document.getElementById("loginScreen")
+                    .style.display = "none";
+
+                document.getElementById("mainSystem")
+                    .style.display = "block";
+
+                loadItems();
+
+            } else {
+
+                document.getElementById("loginScreen")
+                    .style.display = "block";
+
+                document.getElementById("mainSystem")
+                    .style.display = "none";
+
+            }
+
+        });
         // Inicializar a tabela ao carregar a página
         window.onload = loadItems;
     </script>
 </body>
+
 </html>
