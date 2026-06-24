@@ -233,10 +233,11 @@
                 document.getElementById('itemForm').reset();
                 togglePatrimonyFields();
                 loadItems(); // Atualiza a tabela
-            } catch (error) {
-                console.error("Erro ao salvar: ", error);
-                alert("Erro ao salvar o item.");
-            }
+                     } catch (error) {
+                         console.error(error);
+
+                          alert( "Erro: " + error.code + "\n\n" + error.message);
+                     }
         });
 
         // ==========================================
