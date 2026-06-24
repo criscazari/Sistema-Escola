@@ -58,7 +58,7 @@
             border-collapse: collapse;
             margin-top: 15px;
             background: white;
-            min-width: 600px;
+            min-width: 800px;
         }
 
         h2 {
@@ -114,7 +114,7 @@
 
         .row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 15px;
         }
 
@@ -262,6 +262,57 @@
                             <option value="Outros">Outros</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label for="itemStatus">Status*</label>
+                        <select id="itemStatus" required>
+                            <option value="">Selecione...</option>
+                            <option value="Em uso">Em uso</option>
+                            <option value="Condicionado">Condicionado</option>
+                            <option value="Dar baixa">Dar baixa</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemLocation">Local*</label>
+                        <select id="itemLocation" required>
+                            <option value="">Selecione...</option>
+                            <option value="Almoxarifado - Sede">Almoxarifado - Sede</option>
+                            <option value="Anfiteatro - Sede">Anfiteatro - Sede</option>
+                            <option value="Apoio Adm. (Suman / Dani) - Sede">Apoio Adm. (Suman / Dani) - Sede</option>
+                            <option value="Biblioteca - Sede">Biblioteca - Sede</option>
+                            <option value="Cozinha/Refeitório - Sede">Cozinha/Refeitório - Sede</option>
+                            <option value="Direção / Dir. Serviços - Sede">Direção / Dir. Serviços - Sede</option>
+                            <option value="Hall de Entrada / Patio - Sede">Hall de Entrada / Patio - Sede</option>
+                            <option value="Infra. TI - Sede">Infra. TI - Sede</option>
+                            <option value="Lab. Elétrica - Sede">Lab. Elétrica - Sede</option>
+                            <option value="Lab. Enfermagem - Sede">Lab. Enfermagem - Sede</option>
+                            <option value="Lab. Hardware - Sede">Lab. Hardware - Sede</option>
+                            <option value="Lab. Informática 1 - Sede">Lab. Informática 1 - Sede</option>
+                            <option value="Lab. Informática 2 - Sede">Lab. Informática 2 - Sede</option>
+                            <option value="Lab. Informática 3 - Sede">Lab. Informática 3 - Sede</option>
+                            <option value="Lab. Informática 4 - Sede">Lab. Informática 4 - Sede</option>
+                            <option value="Lab. Informática Móvel - Sede">Lab. Informática Móvel - Sede</option>
+                            <option value="Lab. Mecânica - Sede">Lab. Mecânica - Sede</option>
+                            <option value="Lab. Química - Sede">Lab. Química - Sede</option>
+                            <option value="Protocolo - Sede">Protocolo - Sede</option>
+                            <option value="Sala Antigo Servidor / Arquivo Morto">Sala Antigo Servidor / Arquivo Morto</option>
+                            <option value="Sala ATA - Sede">Sala ATA - Sede</option>
+                            <option value="Sala de Aula - Sede">Sala de Aula - Sede</option>
+                            <option value="Sala de Coordenação - Sede">Sala de Coordenação - Sede</option>
+                            <option value="Sala de Desenho - Sede">Sala de Desenho - Sede</option>
+                            <option value="Sala de Vídeo - Sede">Sala de Vídeo - Sede</option>
+                            <option value="Sala dos Docentes - Sede">Sala dos Docentes - Sede</option>
+                            <option value="Sala Grêmio - Sede">Sala Grêmio - Sede</option>
+                            <option value="Sala Maker - Sede">Sala Maker - Sede</option>
+                            <option value="Sala Servidor - Sede">Sala Servidor - Sede</option>
+                            <option value="Secretaria - Sede">Secretaria - Sede</option>
+                            <option value="Sala de Aula - CD Urubu">Sala de Aula - CD Urubu</option>
+                            <option value="Lab. Informática - CD Urubu">Lab. Informática - CD Urubu</option>
+                            <option value="Sala de Coordenação - CD Urubu">Sala de Coordenação - CD Urubu</option>
+                            <option value="Lab. Informática - CD Pereira Barreto">Lab. Informática - CD Pereira Barreto</option>
+                            <option value="Sala de Coordenação - CD Pereira Barreto">Sala de Coordenação - CD Pereira Barreto</option>
+                            <option value="Lab. Informática - CD Sud Mennucci">Lab. Informática - CD Sud Mennucci</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="row" style="margin-top: 10px;">
@@ -301,7 +352,7 @@
 
             <div class="row no-print" style="margin-bottom: 20px;">
                 <div class="form-group">
-                    <label for="searchQuery">Pesquisar por Nome ou Código de Barras</label>
+                    <label for="searchQuery">Pesquisar por Nome, Local ou Códigos</label>
                     <input type="text" id="searchQuery" oninput="loadItems()" placeholder="Digite para buscar...">
                 </div>
                 <div class="form-group">
@@ -316,8 +367,7 @@
                 </div>
                 <div class="form-group" style="justify-content: flex-end; flex-direction: row; gap: 10px;">
                     <button class="btn btn-sec" onclick="window.print()">🖨️ Imprimir Relatório</button>
-                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar
-                        Backup</button>
+                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar Backup</button>
                 </div>
             </div>
 
@@ -326,6 +376,8 @@
                     <tr>
                         <th>Item/Produto</th>
                         <th>Categoria</th>
+                        <th>Status</th>
+                        <th>Local</th>
                         <th>Patrimônio</th>
                         <th>Código de Barras</th>
                         <th class="no-print">Ações</th>
@@ -399,7 +451,6 @@
             const readerElement = document.getElementById('reader');
             const btnTrigger = document.getElementById('btnScanTrigger');
 
-            // Se já estiver rodando, o botão funciona como "Alternar/Desligar"
             if (isScanning) {
                 stopScanner();
                 return;
@@ -417,9 +468,9 @@
                     constraints: {
                         width: { ideal: 1280 },
                         height: { ideal: 720 },
-                        facingMode: "environment" // Força o uso da câmera traseira
+                        facingMode: "environment"
                     },
-                    singleChannel: false // Falso permite processamento de cor se necessário
+                    singleChannel: false
                 },
                 locator: {
                     patchSize: "medium",
@@ -427,10 +478,9 @@
                 },
                 numOfWorkers: 2,
                 decoder: {
-                    // Focado estritamente nos padrões de etiquetas patrimoniais lineares 1D
                     readers: ["code_128_reader", "code_39_reader"]
                 },
-                locate: true // Crucial: Ativa o localizador de barras na imagem antes de decodificar
+                locate: true
             }, function (err) {
                 if (err) {
                     console.error("Erro ao inicializar o Quagga:", err);
@@ -441,22 +491,16 @@
                 Quagga.start();
             });
 
-            // Evento disparado quando o código é lido corretamente
             Quagga.onDetected((data) => {
                 if (!data || !data.codeResult) return;
 
                 const decodedText = data.codeResult.code;
-
                 tocarBip();
 
-                // Preenche os campos do formulário com o dado limpo puro
                 document.getElementById('barcode').value = decodedText;
                 document.getElementById('searchQuery').value = decodedText;
 
-                // Desliga a câmera e esconde a interface de leitura
                 stopScanner();
-
-                // Executa a busca automática no Firebase
                 loadItems();
             });
         }
@@ -474,7 +518,6 @@
             isScanning = false;
         }
 
-        // Feedback Sonoro Isolado
         function tocarBip() {
             try {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -497,6 +540,8 @@
 
             const nome = document.getElementById('itemName').value;
             const categoria = document.getElementById('itemCategory').value;
+            const status = document.getElementById('itemStatus').value;
+            const local = document.getElementById('itemLocation').value;
             const temPatrimonio = document.getElementById('hasPatrimony').checked;
             const patrimonio = temPatrimonio ? document.getElementById('patrimonyCode').value : "N/A";
             const codigoBarras = temPatrimonio ? document.getElementById('barcode').value : "N/A";
@@ -505,6 +550,8 @@
                 await db.collection("itens").add({
                     nome: nome,
                     categoria: categoria,
+                    status: status,
+                    local: local,
                     temPatrimonio: temPatrimonio,
                     patrimonio: patrimonio,
                     codigoBarras: codigoBarras,
@@ -528,7 +575,7 @@
             const queryText = document.getElementById('searchQuery').value.toLowerCase();
             const filterCategory = document.getElementById('filterCategory').value;
             const tbody = document.getElementById('itemsTableBody');
-            tbody.innerHTML = "<tr><td colspan='5'>Carregando itens...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='7'>Carregando itens...</td></tr>";
 
             try {
                 let reference = db.collection("itens");
@@ -541,7 +588,7 @@
                 tbody.innerHTML = "";
 
                 if (snapshot.empty) {
-                    tbody.innerHTML = "<tr><td colspan='5'>Nenhum item cadastrado ou encontrado.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='7'>Nenhum item cadastrado ou encontrado.</td></tr>";
                     return;
                 }
 
@@ -549,7 +596,12 @@
                     const item = doc.data();
                     const id = doc.id;
 
+                    // Fallbacks caso os registros antigos não possuam os novos campos no Firestore
+                    const statusExibido = item.status || "Não Informado";
+                    const localExibido = item.local || "Não Informado";
+
                     if (item.nome.toLowerCase().includes(queryText) ||
+                        localExibido.toLowerCase().includes(queryText) ||
                         item.patrimonio.toLowerCase().includes(queryText) ||
                         item.codigoBarras.toLowerCase().includes(queryText)) {
 
@@ -557,10 +609,12 @@
                             <tr>
                                 <td><b>${item.nome}</b></td>
                                 <td>${item.categoria}</td>
+                                <td><span style="font-weight: 500;">${statusExibido}</span></td>
+                                <td>${localExibido}</td>
                                 <td>${item.patrimonio}</td>
                                 <td>${item.codigoBarras}</td>
                                 <td class="no-print">
-                                    <button class="btn btn-sec" style="padding: 2px 8px; font-size: 13px; background-color: #2980b9;" onclick="editItem('${id}', '${item.nome}', '${item.categoria}', '${item.patrimonio}', '${item.codigoBarras}')">✏️</button>
+                                    <button class="btn btn-sec" style="padding: 2px 8px; font-size: 13px; background-color: #2980b9;" onclick="editItem('${id}', '${item.nome}', '${statusExibido}', '${localExibido}', '${item.patrimonio}', '${item.codigoBarras}')">✏️</button>
                                     <button class="btn btn-sec" style="padding: 2px 8px; font-size: 13px; background-color: #c0392b;" onclick="deleteItem('${id}')">🗑️</button>
                                 </td>
                             </tr>
@@ -568,9 +622,13 @@
                         tbody.innerHTML += row;
                     }
                 });
+
+                if (tbody.innerHTML === "") {
+                    tbody.innerHTML = "<tr><td colspan='7'>Nenhum item corresponde à pesquisa.</td></tr>";
+                }
             } catch (error) {
                 console.error("Erro ao carregar dados: ", error);
-                tbody.innerHTML = "<tr><td colspan='5'>Erro ao carregar os dados.</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='7'>Erro ao carregar os dados.</td></tr>";
             }
         }
 
@@ -585,14 +643,20 @@
                     loadItems();
                 } catch (error) {
                     console.error("Erro ao excluir: ", error);
-                    alert("Não foi possível excluir the item.");
+                    alert("Não foi possível excluir o item.");
                 }
             }
         }
 
-        async function editItem(id, nomeAtual, categoryAtual, patrimonioAtual, codigoBarrasAtual) {
+        async function editItem(id, nomeAtual, statusAtual, localAtual, patrimonioAtual, codigoBarrasAtual) {
             const novoNome = prompt("Digite o novo nome do item:", nomeAtual);
             if (novoNome === null) return;
+
+            const novoStatus = prompt("Digite o novo status (Em uso / Condicionado / Dar baixa):", statusAtual);
+            if (novoStatus === null) return;
+
+            const novoLocal = prompt("Digite o novo local do item:", localAtual);
+            if (novoLocal === null) return;
 
             const novoPatrimonio = prompt("Digite o novo patrimônio:", patrimonioAtual);
             if (novoPatrimonio === null) return;
@@ -603,11 +667,13 @@
             try {
                 await db.collection("itens").doc(id).update({
                     nome: novoNome,
+                    status: novoStatus,
+                    local: novoLocal,
                     patrimonio: novoPatrimonio,
                     codigoBarras: novoCodigoBarras
                 });
 
-                alert("Item updated com sucesso!");
+                alert("Item atualizado com sucesso!");
                 loadItems();
             } catch (error) {
                 console.error("Erro ao atualizar: ", error);
