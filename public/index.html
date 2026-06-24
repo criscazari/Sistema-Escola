@@ -10,7 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-
+    
     <style>
         :root {
             --primary-color: #b30000;
@@ -391,7 +391,7 @@
         // LÓGICA DO SCANNER DE CÓDIGO DE BARRAS
         // ==========================================
         // Declarado fora da função para manter o escopo global/módulo
-        let html5QrcodeScanner = null;
+        
 
         async function startScanner() {
             const readerElement = document.getElementById('reader');
