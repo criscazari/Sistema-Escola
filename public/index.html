@@ -10,7 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    
+
     <style>
         :root {
             --primary-color: #b30000;
@@ -352,8 +352,9 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        let html5QrcodeScanner = null;
-
+        // let html5QrcodeScanner = null;
+        let videoStream = null;
+        let animationFrameId = null;
         // ==========================================
         // LOGIN
         // ==========================================
@@ -390,66 +391,109 @@
         // ==========================================
         // LÓGICA DO SCANNER DE CÓDIGO DE BARRAS
         // ==========================================
-        // Declarado fora da função para manter o escopo global/módulo
-        
-
         async function startScanner() {
-    const readerElement = document.getElementById('reader');
-    readerElement.style.display = 'block';
+            // Verifica se o navegador do usuário suporta a API nativa de código de barras
+            if (!('BarcodeDetector' in window)) {
+                alert("Seu navegador não suporta a detecção nativa de código de barras. Use o Chrome no Android ou Safari no iOS atualizado.");
+                return;
+            }
 
-    if (html5QrcodeScanner) {
-        try {
-            await html5QrcodeScanner.clear();
-        } catch (err) {
-            console.warn("Erro ao limpar scanner anterior:", err);
+            const readerElement = document.getElementById('reader');
+            readerElement.style.display = 'block';
+
+            // Limpa instâncias anteriores se o botão for clicado duas vezes
+            stopScanner();
+
+            // Cria dinamicamente um elemento de vídeo para capturar a câmera dentro do seu 'reader'
+            let video = document.getElementById('scanner-video');
+            if (!video) {
+                video = document.createElement('video');
+                video.id = 'scanner-video';
+                video.setAttribute('playsinline', true); // Obrigatório para iOS
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.objectFit = 'cover';
+                readerElement.appendChild(video);
+            }
+
+            try {
+                // 1. Liga a câmera do celular em alta resolução
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: "environment",
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: false
+                });
+
+                video.srcObject = videoStream;
+                await video.play();
+
+                // 2. Inicializa o Detector Nativo configurado para os formatos da sua etiqueta
+                const barcodeDetector = new BarcodeDetector({
+                    formats: ['code_39', 'code_128']
+                });
+
+                // 3. Inicia o loop de varredura quadro a quadro
+                async function scanFrame() {
+                    if (video.paused || video.ended) return;
+
+                    try {
+                        // Passa o elemento de vídeo direto para o detector analisar o frame atual
+                        const barcodes = await barcodeDetector.detect(video);
+
+                        if (barcodes.length > 0) {
+                            // Código encontrado! Pega o valor do primeiro detectado
+                            const decodedText = barcodes[0].rawValue;
+
+                            tocarBip();
+
+                            // Preenche seus inputs do formulário
+                            document.getElementById('barcode').value = decodedText;
+                            document.getElementById('searchQuery').value = decodedText;
+
+                            // Desliga tudo com segurança
+                            stopScanner();
+                            readerElement.style.display = 'none';
+
+                            // Executa a busca no Firebase
+                            loadItems();
+                            return; // Encerra o loop
+                        }
+                    } catch (err) {
+                        console.error("Erro durante a varredura do frame:", err);
+                    }
+
+                    // Se não achou nada neste frame, chama o próximo frame da câmera
+                    animationFrameId = requestAnimationFrame(scanFrame);
+                }
+
+                // Dá a largada no loop de leitura
+                animationFrameId = requestAnimationFrame(scanFrame);
+
+            } catch (err) {
+                console.error("Erro ao iniciar a câmera nativa:", err);
+                alert("Não foi possível acessar a câmera. Verifique as permissões.");
+            }
         }
-    }
 
-    // CONFIGURAÇÃO RESTRITA E APERFEIÇOADA
-    html5QrcodeScanner = new Html5QrcodeScanner("reader", {
-        fps: 60, // Aumentado para 30fps para capturar o foco mais rápido
-        qrbox: function (viewfinderWidth, viewfinderHeight) {
-            // Um pouco mais alto para garantir que o foco do celular pegue as barras inteiras
-            return {
-                width: Math.min(viewfinderWidth * 0.85, 380),
-                height: 120 
-            };
-        },
-        rememberLastUsedCamera: true,
-        formatsToSupport: [
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.CODE_39
-        ],
-        // O segredo está aqui: injetamos as restrições de alta resolução no núcleo do scanner
-        videoConstraints: {
-            facingMode: "environment",
-            width: { ideal: 1920 }, // Força Full HD para detectar barras finas
-            height: { ideal: 1080 },
-            focusMode: "continuous" // Força o foco contínuo se o navegador suportar
-        },
-        experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true 
+        // Função para desligar a câmera e limpar a memória com segurança
+        function stopScanner() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            const video = document.getElementById('scanner-video');
+            if (video) {
+                video.srcObject = null;
+                video.remove();
+            }
         }
-    });
-
-    html5QrcodeScanner.render(async (decodedText) => {
-        tocarBip();
-
-        document.getElementById('barcode').value = decodedText;
-        document.getElementById('searchQuery').value = decodedText;
-
-        try {
-            await html5QrcodeScanner.clear();
-            readerElement.style.display = 'none';
-        } catch (err) {
-            console.error("Erro ao fechar a câmera:", err);
-        }
-
-        loadItems();
-    }, (error) => {
-        // Ignora erros comuns de varredura
-    });
-}
 
         // ==========================================
         // SALVAR ITEM NO FIRESTORE (CREATE)
