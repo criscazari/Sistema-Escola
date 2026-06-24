@@ -39,7 +39,6 @@
             border-radius: 8px;
             margin-bottom: 20px;
             position: relative;
-            
         }
 
         .container {
@@ -109,7 +108,7 @@
 
         .row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1-fraction));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 15px;
         }
 
@@ -182,30 +181,24 @@
             right: 20px;
             bottom: 15px;
             padding: 5px 12px;
-             font-size: 14px;">
+            font-size: 14px;">
             Sair
         </button>
     </header>
 
     <div id="loginScreen" class="card" style="max-width:400px; margin:50px auto;">
-
         <h2>Login do Sistema</h2>
-
         <div class="form-group">
             <label>E-mail</label>
             <input type="email" id="loginEmail">
         </div>
-
         <div class="form-group">
             <label>Senha</label>
             <input type="password" id="loginPassword">
         </div>
-
         <button class="btn" onclick="login()">
             Entrar
         </button>
-
-
     </div>
 
     <div class="container" id="mainSystem" style="display:none;">
@@ -282,8 +275,7 @@
                 </div>
                 <div class="form-group" style="justify-content: flex-end; flex-direction: row; gap: 10px;">
                     <button class="btn btn-sec" onclick="window.print()">🖨️ Imprimir Relatório</button>
-                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar
-                        Backup</button>
+                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar Backup</button>
                 </div>
             </div>
 
@@ -294,6 +286,7 @@
                         <th>Categoria</th>
                         <th>Patrimônio</th>
                         <th>Código de Barras</th>
+                        <th class="no-print">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="itemsTableBody">
@@ -305,14 +298,8 @@
 
     <script>
         // ==========================================
-        // CONFIGURAÇÃO DO FIREBASE (INSIRA SEUS DADOS)
+        // CONFIGURAÇÃO DO FIREBASE
         // ==========================================
-        // Import the functions you need from the SDKs you need
-        //import { initializeApp } from "firebase/app";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-
-        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyB9HtjLT4gGhCOV4RsFQ2cPipW6Y53kcug",
             authDomain: "sistemaescola-f74c2.firebaseapp.com",
@@ -322,9 +309,6 @@
             appId: "1:328152429744:web:8a0b7985be8c9e25cd3775"
         };
 
-        // Initialize Firebase
-        //const app = initializeApp(firebaseConfig);
-
         // Inicializa o Firebase
         firebase.initializeApp(firebaseConfig);
 
@@ -333,58 +317,33 @@
 
         let html5QrcodeScanner = null;
 
-
         // ==========================================
         // LOGIN
         // ==========================================
-
         async function login() {
-
-            const email =
-                document.getElementById("loginEmail").value;
-
-            const password =
-                document.getElementById("loginPassword").value;
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
 
             try {
-
-                await auth.signInWithEmailAndPassword(
-                    email,
-                    password
-                );
-
+                await auth.signInWithEmailAndPassword(email, password);
             } catch (error) {
-
-                alert(
-                    "Erro ao entrar:\n\n" +
-                    error.message
-                );
-
+                alert("Erro ao entrar:\n\n" + error.message);
             }
-
         }
+
         document.addEventListener("keydown", function (event) {
-
             if (event.key === "Enter") {
-
-                const loginScreen =
-                    document.getElementById("loginScreen");
-
+                const loginScreen = document.getElementById("loginScreen");
                 if (loginScreen.style.display !== "none") {
-
                     login();
-
                 }
-
             }
-
         });
 
         function logout() {
-
             auth.signOut();
-
         }
+
         // Mostrar/Ocultar campos de patrimônio
         function togglePatrimonyFields() {
             const hasPatrimony = document.getElementById('hasPatrimony').checked;
@@ -400,19 +359,18 @@
 
             html5QrcodeScanner = new Html5QrcodeScanner("reader", {
                 fps: 10,
-                qrbox: { width: 250, height: 100 } // Formato retangular ideal para barras
+                qrbox: { width: 250, height: 100 }
             });
 
             html5QrcodeScanner.render((decodedText) => {
                 document.getElementById('barcode').value = decodedText;
-                html5QrcodeScanner.clear(); // Para a câmera após a leitura bem-sucedida
+                html5QrcodeScanner.clear();
                 readerElement.style.display = 'none';
 
-                // Se estiver buscando, pode disparar a busca automática aqui
                 document.getElementById('searchQuery').value = decodedText;
                 loadItems();
             }, (error) => {
-                // Erros silenciosos enquanto procura por códigos na imagem
+                // Erros silenciosos enquanto escaneia
             });
         }
 
@@ -441,10 +399,9 @@
                 alert("Item catalogado com sucesso!");
                 document.getElementById('itemForm').reset();
                 togglePatrimonyFields();
-                loadItems(); // Atualiza a tabela
+                loadItems();
             } catch (error) {
                 console.error(error);
-
                 alert("Erro: " + error.code + "\n\n" + error.message);
             }
         });
@@ -456,12 +413,11 @@
             const queryText = document.getElementById('searchQuery').value.toLowerCase();
             const filterCategory = document.getElementById('filterCategory').value;
             const tbody = document.getElementById('itemsTableBody');
-            tbody.innerHTML = "<tr><td colspan='4'>Carregando itens...</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='5'>Carregando itens...</td></tr>";
 
             try {
                 let reference = db.collection("itens");
 
-                // Filtro direto por categoria no banco se selecionado
                 if (filterCategory) {
                     reference = reference.where("categoria", "==", filterCategory);
                 }
@@ -470,14 +426,14 @@
                 tbody.innerHTML = "";
 
                 if (snapshot.empty) {
-                    tbody.innerHTML = "<tr><td colspan='4'>Nenhum item cadastrado ou encontrado.</td></tr>";
+                    tbody.innerHTML = "<tr><td colspan='5'>Nenhum item cadastrado ou encontrado.</td></tr>";
                     return;
                 }
 
                 snapshot.forEach(doc => {
                     const item = doc.data();
+                    const id = doc.id;
 
-                    // Filtro de pesquisa textual (Nome, Patrimônio ou Código de Barras)
                     if (item.nome.toLowerCase().includes(queryText) ||
                         item.patrimonio.toLowerCase().includes(queryText) ||
                         item.codigoBarras.toLowerCase().includes(queryText)) {
@@ -488,6 +444,10 @@
                                 <td>${item.categoria}</td>
                                 <td>${item.patrimonio}</td>
                                 <td>${item.codigoBarras}</td>
+                                <td class="no-print">
+                                    <button class="btn btn-sec" style="padding: 2px 8px; font-size: 13px; background-color: #2980b9;" onclick="editItem('${id}', '${item.nome}', '${item.categoria}', '${item.patrimonio}', '${item.codigoBarras}')">✏️</button>
+                                    <button class="btn btn-sec" style="padding: 2px 8px; font-size: 13px; background-color: #c0392b;" onclick="deleteItem('${id}')">🗑️</button>
+                                </td>
                             </tr>
                         `;
                         tbody.innerHTML += row;
@@ -495,6 +455,48 @@
                 });
             } catch (error) {
                 console.error("Erro ao carregar dados: ", error);
+                tbody.innerHTML = "<tr><td colspan='5'>Erro ao carregar os dados.</td></tr>";
+            }
+        }
+
+        // ==========================================
+        // FUNÇÕES PARA EDITAR E EXCLUIR (UPDATE & DELETE)
+        // ==========================================
+        async function deleteItem(id) {
+            if (confirm("Tem certeza que deseja excluir este item do inventário da Etec?")) {
+                try {
+                    await db.collection("itens").doc(id).delete();
+                    alert("Item removido com sucesso!");
+                    loadItems();
+                } catch (error) {
+                    console.error("Erro ao excluir: ", error);
+                    alert("Não foi possível excluir o item.");
+                }
+            }
+        }
+
+        async function editItem(id, nomeAtual, categoryAtual, patrimonioAtual, codigoBarrasAtual) {
+            const novoNome = prompt("Digite o novo nome do item:", nomeAtual);
+            if (novoNome === null) return; 
+
+            const novoPatrimonio = prompt("Digite o novo patrimônio:", patrimonioAtual);
+            if (novoPatrimonio === null) return;
+
+            const novoCodigoBarras = prompt("Digite o novo código de barras:", codigoBarrasAtual);
+            if (novoCodigoBarras === null) return;
+
+            try {
+                await db.collection("itens").doc(id).update({
+                    nome: novoNome,
+                    patrimonio: novoPatrimonio,
+                    codigoBarras: novoCodigoBarras
+                });
+
+                alert("Item atualizado com sucesso!");
+                loadItems();
+            } catch (error) {
+                console.error("Erro ao atualizar: ", error);
+                alert("Erro ao atualizar o item.");
             }
         }
 
@@ -518,35 +520,21 @@
                 alert("Falha ao gerar arquivo de backup.");
             }
         }
+
+        // Escutador do Estado de Login
         auth.onAuthStateChanged((user) => {
-
             if (user) {
-
-                document.getElementById("loginScreen")
-                    .style.display = "none";
-
-                document.getElementById("mainSystem")
-                    .style.display = "block";
-
-                document.getElementById("btnLogout")
-                    .style.display = "block";
-
+                document.getElementById("loginScreen").style.display = "none";
+                document.getElementById("mainSystem").style.display = "block";
+                document.getElementById("btnLogout").style.display = "block";
                 loadItems();
-
             } else {
-
-                document.getElementById("loginScreen")
-                    .style.display = "block";
-
-                document.getElementById("mainSystem")
-                    .style.display = "none";
-
-                document.getElementById("btnLogout")
-                    .style.display = "none";
-
+                document.getElementById("loginScreen").style.display = "block";
+                document.getElementById("mainSystem").style.display = "none";
+                document.getElementById("btnLogout").style.display = "none";
             }
-
         });
+
         // Inicializar a tabela ao carregar a página
         window.onload = loadItems;
     </script>
