@@ -34,24 +34,33 @@
         header {
             background-color: var(--primary-color);
             color: white;
-            padding: 15px;
+            padding: 20px 15px;
             text-align: center;
             border-radius: 8px;
             margin-bottom: 20px;
             position: relative;
+            /* Garante que o cabeçalho cresça se o texto quebrar de linha no celular */
+            min-height: 80px;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
+        /* Deixa a tabela responsiva: cria uma barra de rolagem lateral apenas na tabela se ela não couber no celular */
         .card {
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
+            overflow-x: auto;
+            /* <-- ISSO VAI SALVAR A TABELA NO CELULAR */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            min-width: 600px;
+            /* Garante que a tabela mantenha a estrutura legível ao rolar de lado */
         }
 
         h2 {
@@ -115,7 +124,8 @@
         /* Câmera/Scanner */
         #reader {
             width: 100%;
-            max-width: 400px;
+            max-width: 100%;
+            /* Adapta ao tamanho total da caixinha no mobile */
             margin: 15px auto;
             background: #000;
             border-radius: 8px;
@@ -144,6 +154,31 @@
 
         tr:nth-child(even) {
             background-color: #f9f9f9;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding-top: 45px;
+                /* Abre espaço no topo para o botão não cobrir o texto */
+            }
+
+            header h1 {
+                font-size: 20px;
+                /* Diminui um pouco a letra do título principal no celular */
+            }
+
+            header p {
+                font-size: 14px;
+            }
+
+            #btnLogout {
+                top: 10px !important;
+                /* Move o botão para o topo superior direito no celular */
+                bottom: auto !important;
+                right: 10px !important;
+                padding: 4px 10px !important;
+                font-size: 12px !important;
+            }
         }
 
         /* Regras de Impressão (Relatórios) */
@@ -275,7 +310,8 @@
                 </div>
                 <div class="form-group" style="justify-content: flex-end; flex-direction: row; gap: 10px;">
                     <button class="btn btn-sec" onclick="window.print()">🖨️ Imprimir Relatório</button>
-                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar Backup</button>
+                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar
+                        Backup</button>
                 </div>
             </div>
 
@@ -357,21 +393,43 @@
             const readerElement = document.getElementById('reader');
             readerElement.style.display = 'block';
 
+            // Se já houver um scanner rodando, limpa ele antes de começar outro
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear().catch(err => console.log(err));
+            }
+
+            // Instancia o scanner apontando para o id "reader"
             html5QrcodeScanner = new Html5QrcodeScanner("reader", {
-                fps: 10,
-                qrbox: { width: 250, height: 100 }
+                fps: 15, // Aumentado para focar mais rápido no celular
+                qrbox: function (viewfinderWidth, viewfinderHeight) {
+                    // Torna a caixa de leitura dinâmica e responsiva para o celular
+                    return {
+                        width: viewfinderWidth * 0.8,
+                        height: 100
+                    };
+                },
+                rememberLastUsedCamera: true,
+                supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
             });
 
             html5QrcodeScanner.render((decodedText) => {
                 document.getElementById('barcode').value = decodedText;
-                html5QrcodeScanner.clear();
-                readerElement.style.display = 'none';
+                html5QrcodeScanner.clear().then(() => {
+                    readerElement.style.display = 'none';
+                }).catch(err => console.error(err));
 
                 document.getElementById('searchQuery').value = decodedText;
                 loadItems();
             }, (error) => {
-                // Erros silenciosos enquanto escaneia
+                // Erros de busca silenciosos
             });
+
+            // Timeout de segurança: Se o navegador bloquear ou demorar para pedir permissão
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .catch((err) => {
+                    alert("Acesso à câmera negado ou não suportado. Por favor, verifique as permissões do seu navegador (no cadeado ao lado da URL).");
+                    readerElement.style.display = 'none';
+                });
         }
 
         // ==========================================
@@ -477,7 +535,7 @@
 
         async function editItem(id, nomeAtual, categoryAtual, patrimonioAtual, codigoBarrasAtual) {
             const novoNome = prompt("Digite o novo nome do item:", nomeAtual);
-            if (novoNome === null) return; 
+            if (novoNome === null) return;
 
             const novoPatrimonio = prompt("Digite o novo patrimônio:", patrimonioAtual);
             if (novoPatrimonio === null) return;
