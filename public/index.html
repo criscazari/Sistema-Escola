@@ -776,117 +776,180 @@
             }
         }
 
-       // ==========================================
-// FUNÇÕES PARA EDITAR E EXCLUIR (UPDATE & DELETE) COM LOGS
-// ==========================================
-async function deleteItem(id) {
-    if (confirm("Tem certeza que deseja excluir este item do inventário da Etec?")) {
-        try {
-            // 1. Busca os dados atuais do item para guardar no histórico antes de excluir
-            const docRef = db.collection("itens").doc(id);
-            const docSnap = await docRef.get();
-            
-            let dadosAntigos = {};
-            if (docSnap.exists) {
-                dadosAntigos = docSnap.data();
+        // ==========================================
+        // FUNÇÕES PARA EDITAR E EXCLUIR (UPDATE & DELETE) COM LOGS
+        // ==========================================
+        async function deleteItem(id) {
+            if (confirm("Tem certeza que deseja excluir este item do inventário da Etec?")) {
+                try {
+                    // 1. Busca os dados atuais do item para guardar no histórico antes de excluir
+                    const docRef = db.collection("itens").doc(id);
+                    const docSnap = await docRef.get();
+
+                    let dadosAntigos = {};
+                    if (docSnap.exists) {
+                        dadosAntigos = docSnap.data();
+                    }
+
+                    // 2. Cria o registro de exclusão no histórico (invisível para o usuário)
+                    await db.collection('historico').add({
+                        tipoOperacao: 'EXCLUSAO',
+                        itemId: id,
+                        patrimonio: dadosAntigos.patrimonio || 'N/A',
+                        nomeItem: dadosAntigos.nome || '',
+                        dadosDeletados: dadosAntigos, // Guarda todos os dados antigos para o backup
+                        dataHora: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // 3. Exclui permanentemente o item da coleção principal
+                    await docRef.delete();
+
+                    alert("Item removido com sucesso!");
+                    loadItems();
+                } catch (error) {
+                    console.error("Erro ao excluir ou gerar log: ", error);
+                    alert("Não foi possível excluir o item.");
+                }
             }
-
-            // 2. Cria o registro de exclusão no histórico (invisível para o usuário)
-            await db.collection('historico').add({
-                tipoOperacao: 'EXCLUSAO',
-                itemId: id,
-                patrimonio: dadosAntigos.patrimonio || 'N/A',
-                nomeItem: dadosAntigos.nome || '',
-                dadosDeletados: dadosAntigos, // Guarda todos os dados antigos para o backup
-                dataHora: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            // 3. Exclui permanentemente o item da coleção principal
-            await docRef.delete();
-
-            alert("Item removido com sucesso!");
-            loadItems();
-        } catch (error) {
-            console.error("Erro ao excluir ou gerar log: ", error);
-            alert("Não foi possível excluir o item.");
         }
-    }
-}
 
-async function editItem(id, nomeAtual, statusAtual, localAtual, patrimonioAtual, codigoBarrasAtual) {
-    const novoNome = prompt("Digite o novo nome do item:", nomeAtual);
-    if (novoNome === null) return;
+        async function editItem(id, nomeAtual, statusAtual, localAtual, patrimonioAtual, codigoBarrasAtual) {
+            const novoNome = prompt("Digite o novo nome do item:", nomeAtual);
+            if (novoNome === null) return;
 
-    const novoStatus = prompt("Digite o novo status (Em uso / Condicionado / Dar baixa):", statusAtual);
-    if (novoStatus === null) return;
+            const novoStatus = prompt("Digite o novo status (Em uso / Condicionado / Dar baixa):", statusAtual);
+            if (novoStatus === null) return;
 
-    const novoLocal = prompt("Digite o novo local do item:", localAtual);
-    if (novoLocal === null) return;
+            const novoLocal = prompt("Digite o novo local do item:", localAtual);
+            if (novoLocal === null) return;
 
-    const novoPatrimonio = prompt("Digite o novo patrimônio:", patrimonioAtual);
-    if (novoPatrimonio === null) return;
+            const novoPatrimonio = prompt("Digite o novo patrimônio:", patrimonioAtual);
+            if (novoPatrimonio === null) return;
 
-    const novoCodigoBarras = prompt("Digite o novo código de barras:", codigoBarrasAtual);
-    if (novoCodigoBarras === null) return;
+            const novoCodigoBarras = prompt("Digite o novo código de barras:", codigoBarrasAtual);
+            if (novoCodigoBarras === null) return;
 
-    // Estrutura os objetos com os dados antigos e novos para o log
-    const dadosAntigos = {
-        nome: nomeAtual,
-        status: statusAtual,
-        local: localAtual,
-        patrimonio: patrimonioAtual,
-        codigoBarras: codigoBarrasAtual
-    };
+            // Estrutura os objetos com os dados antigos e novos para o log
+            const dadosAntigos = {
+                nome: nomeAtual,
+                status: statusAtual,
+                local: localAtual,
+                patrimonio: patrimonioAtual,
+                codigoBarras: codigoBarrasAtual
+            };
 
-    const novosDados = {
-        nome: novoNome,
-        status: novoStatus,
-        local: novoLocal,
-        patrimonio: novoPatrimonio,
-        codigoBarras: novoCodigoBarras
-    };
+            const novosDados = {
+                nome: novoNome,
+                status: novoStatus,
+                local: novoLocal,
+                patrimonio: novoPatrimonio,
+                codigoBarras: novoCodigoBarras
+            };
 
-    try {
-        // 1. Atualiza o item na coleção principal
-        await db.collection("itens").doc(id).update(novosDados);
+            try {
+                // 1. Atualiza o item na coleção principal
+                await db.collection("itens").doc(id).update(novosDados);
 
-        // 2. Cria o registro de alteração no histórico (invisível para o usuário)
-        await db.collection('historico').add({
-            tipoOperacao: 'ALTERACAO',
-            itemId: id,
-            patrimonio: dadosAntigos.patrimonio || 'N/A',
-            nomeAnterior: dadosAntigos.nome || '',
-            nomeNovo: novosDados.nome || '',
-            dadosAnteriores: dadosAntigos, 
-            dadosNovos: novosDados,       
-            dataHora: firebase.firestore.FieldValue.serverTimestamp()
-        });
+                // 2. Cria o registro de alteração no histórico (invisível para o usuário)
+                await db.collection('historico').add({
+                    tipoOperacao: 'ALTERACAO',
+                    itemId: id,
+                    patrimonio: dadosAntigos.patrimonio || 'N/A',
+                    nomeAnterior: dadosAntigos.nome || '',
+                    nomeNovo: novosDados.nome || '',
+                    dadosAnteriores: dadosAntigos,
+                    dadosNovos: novosDados,
+                    dataHora: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
-        alert("Item atualizado com sucesso!");
-        loadItems();
-    } catch (error) {
-        console.error("Erro ao atualizar ou gerar log: ", error);
-        alert("Erro ao atualizar o item.");
-    }
-}
+                alert("Item atualizado com sucesso!");
+                loadItems();
+            } catch (error) {
+                console.error("Erro ao atualizar ou gerar log: ", error);
+                alert("Erro ao atualizar o item.");
+            }
+        }
         // ==========================================
         // FUNÇÃO DE BACKUP (DOWNLOAD JSON)
         // ==========================================
+        // async function exportBackup() {
+        //   try {
+        //       const snapshot = await db.collection("itens").get();
+        //       const dados = [];
+        //       snapshot.forEach(doc => dados.push({ id: doc.id, ...doc.data() }));
+
+        //       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dados, null, 2));
+        //      const downloadAnchor = document.createElement('a');
+        //      downloadAnchor.setAttribute("href", dataStr);
+        //       downloadAnchor.setAttribute("download", `backup_inventario_etec_${new Date().toISOString().split('T')[0]}.json`);
+        //      document.body.appendChild(downloadAnchor);
+        //       downloadAnchor.click();
+        //       downloadAnchor.remove();
+        //   } catch (error) {
+        //        alert("Falha ao gerar arquivo de backup.");
+        //   }
+        // }
+        // ==========================================
+        // FUNÇÃO DE BACKUP EM EXCEL (DOWNLOAD XLSX COM ABAS)
+        // ==========================================
         async function exportBackup() {
             try {
-                const snapshot = await db.collection("itens").get();
-                const dados = [];
-                snapshot.forEach(doc => dados.push({ id: doc.id, ...doc.data() }));
+                // 1. Busca os itens ativos no Firestore
+                snapshotItens = await db.collection("itens").get();
+                dadosItens = [];
+                snapshotItens.forEach(doc => {
+                    item = doc.data();
+                    dadosItens.push({
+                        "ID do Documento": doc.id,
+                        "Nome do Item": item.nome || "",
+                        "Categoria": item.categoria || "",
+                        "Status": item.status || "",
+                        "Local": item.local || "",
+                        "Patrimônio": item.patrimonio || "",
+                        "Código de Barras": item.codigoBarras || "",
+                        "Data de Cadastro": item.dataCadastro || ""
+                    });
+                });
 
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dados, null, 2));
-                const downloadAnchor = document.createElement('a');
-                downloadAnchor.setAttribute("href", dataStr);
-                downloadAnchor.setAttribute("download", `backup_inventario_etec_${new Date().toISOString().split('T')[0]}.json`);
-                document.body.appendChild(downloadAnchor);
-                downloadAnchor.click();
-                downloadAnchor.remove();
+                // 2. Busca o histórico de alterações e exclusões
+                snapshotHistorico = await db.collection("historico").get();
+                dadosHistorico = [];
+                snapshotHistorico.forEach(doc => {
+                    log = doc.data();
+                    // Converte o timestamp do Firebase para uma data legível
+                    dataHoraFormatada = "";
+                    if (log.dataHora && typeof log.dataHora.toDate === 'function') {
+                        dataHoraFormatada = log.dataHora.toDate().toLocaleString('pt-BR');
+                    }
+
+                    dadosHistorico.push({
+                        "ID do Log": doc.id,
+                        "Operação": log.tipoOperacao || "",
+                        "ID do Item": log.itemId || "",
+                        "Patrimônio": log.patrimonio || "",
+                        "Item/Produto afetado": log.nomeItem || log.nomeNovo || log.nomeAnterior || "",
+                        "Data e Hora": dataHoraFormatada
+                    });
+                });
+
+                // 3. Cria um novo livro de trabalho (Workbook) do Excel
+                wb = XLSX.utils.book_new();
+
+                // 4. Converte os dados estruturados para planilhas (Worksheets)
+                wsItens = XLSX.utils.json_to_sheet(dadosItens);
+                wsHistorico = XLSX.utils.json_to_sheet(dadosHistorico);
+
+                // 5. Adiciona as planilhas ao livro com nomes específicos para as abas
+                XLSX.utils.book_append_sheet(wb, wsItens, "Inventário Ativo");
+                XLSX.utils.book_append_sheet(wb, wsHistorico, "Histórico de Logs");
+
+                // 6. Gera o arquivo final e inicia o download automaticamente
+                dataAtual = new Date().toISOString().split('T')[0];
+                XLSX.writeFile(wb, `backup_inventario_etec_${dataAtual}.xlsx`);
+
             } catch (error) {
-                alert("Falha ao gerar arquivo de backup.");
+                console.error("Erro ao gerar backup em Excel: ", error);
+                alert("Falha ao gerar arquivo de backup em Excel (.xlsx).");
             }
         }
 
