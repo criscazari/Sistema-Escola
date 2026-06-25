@@ -872,41 +872,24 @@
             }
         }
 
-        // ==========================================
-        // FUNÇÃO DE BACKUP (DOWNLOAD JSON - APENAS ITENS)
+          // ==========================================
+        // FUNÇÃO DE BACKUP (DOWNLOAD JSON)
         // ==========================================
         async function exportBackup() {
             try {
-                // Busca apenas a coleção de itens que já está liberada no seu Firebase
                 const snapshot = await db.collection("itens").get();
                 const dados = [];
+                snapshot.forEach(doc => dados.push({ id: doc.id, ...doc.data() }));
 
-                snapshot.forEach(doc => {
-                    dados.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
-
-                // Transforma em string JSON estruturada
-                const jsonString = JSON.stringify(dados, null, 2);
-                const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
-
-                // Cria o link de download nativo
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dados, null, 2));
                 const downloadAnchor = document.createElement('a');
-                downloadAnchor.href = URL.createObjectURL(blob);
-
-                const dataAtual = new Date().toISOString().split('T')[0];
-                downloadAnchor.setAttribute("download", `backup_inventario_etec_${dataAtual}.json`);
-
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `backup_inventario_etec_${new Date().toISOString().split('T')[0]}.json`);
                 document.body.appendChild(downloadAnchor);
                 downloadAnchor.click();
                 downloadAnchor.remove();
-
-                alert("✨ Backup dos itens gerado e baixado com sucesso!");
             } catch (error) {
-                console.error("Erro no backup:", error);
-                alert("Falha ao gerar arquivo de backup: " + error.message);
+                alert("Falha ao gerar arquivo de backup.");
             }
         }
 
