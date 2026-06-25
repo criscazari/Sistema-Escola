@@ -735,7 +735,7 @@
                     reference = reference.where("categoria", "==", filterCategory);
                 }
 
-                const snapshot = await reference.get();
+                const snapshot = await reference.orderBy("dataCadastro", "desc").get();
                 tbody.innerHTML = "";
 
                 if (snapshot.empty) {
