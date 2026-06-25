@@ -873,62 +873,40 @@
         }
 
        // ==========================================
-        // FUNÇÃO DE BACKUP COMPLETO (DOWNLOAD EM JSON)
+        // FUNÇÃO DE BACKUP (DOWNLOAD JSON - APENAS ITENS)
         // ==========================================
-        async function exportToJSON() {
+        async function exportBackup() {
             try {
-                // 1. Busca os dados dos Itens
-                const snapshotItens = await db.collection("itens").get();
-                const dadosItens = [];
-                snapshotItens.forEach(doc => {
-                    dadosItens.push({
-                        id: doc.id,
-                        ...doc.data()
+                // Busca apenas a coleção de itens que já está liberada no seu Firebase
+                const snapshot = await db.collection("itens").get();
+                const dados = [];
+                
+                snapshot.forEach(doc => {
+                    dados.push({ 
+                        id: doc.id, 
+                        ...doc.data() 
                     });
                 });
 
-                // 2. Busca os dados do Histórico
-                const snapshotHistorico = await db.collection("historico").get();
-                const dadosHistorico = [];
-                snapshotHistorico.forEach(doc => {
-                    const log = doc.data();
-                    let dataHoraFormatada = "";
-                    if (log.dataHora && typeof log.dataHora.toDate === 'function') {
-                        dataHoraFormatada = log.dataHora.toDate().toISOString();
-                    }
-                    dadosHistorico.push({
-                        id: doc.id,
-                        ...log,
-                        dataHoraFormatada: dataHoraFormatada
-                    });
-                });
-
-                // 3. Junta tudo em um único objeto estruturado
-                const backupCompleto = {
-                    escola: "Etec de Ilha Solteira",
-                    dataExportacao: new Date().toISOString(),
-                    inventarioAtivo: dadosItens,
-                    historicoLogs: dadosHistorico
-                };
-
-                // 4. Cria e dispara o download do arquivo JSON
-                const jsonString = JSON.stringify(backupCompleto, null, 2);
+                // Transforma em string JSON estruturada
+                const jsonString = JSON.stringify(dados, null, 2);
                 const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
-                const link = document.createElement("a");
+                
+                // Cria o link de download nativo
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.href = URL.createObjectURL(blob);
                 
                 const dataAtual = new Date().toISOString().split('T')[0];
-                link.href = URL.createObjectURL(blob);
-                link.download = `backup_inventario_etec_${dataAtual}.json`;
+                downloadAnchor.setAttribute("download", `backup_inventario_etec_${dataAtual}.json`);
                 
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
 
-                alert("✨ Backup em JSON gerado e baixado com sucesso!");
-
+                alert("✨ Backup dos itens gerado e baixado com sucesso!");
             } catch (error) {
-                console.error("Erro ao exportar JSON:", error);
-                alert("Erro ao gerar o arquivo JSON: " + error.message);
+                console.error("Erro no backup:", error);
+                alert("Falha ao gerar arquivo de backup: " + error.message);
             }
         }
 
