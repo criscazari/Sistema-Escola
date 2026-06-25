@@ -336,7 +336,8 @@
                             <option value="Lab. Mecânica - Sede">Lab. Mecânica - Sede</option>
                             <option value="Lab. Química - Sede">Lab. Química - Sede</option>
                             <option value="Protocolo - Sede">Protocolo - Sede</option>
-                            <option value="Sala Antigo Servidor / Arquivo Morto">Sala Antigo Servidor / Arquivo Morto</option>
+                            <option value="Sala Antigo Servidor / Arquivo Morto">Sala Antigo Servidor / Arquivo Morto
+                            </option>
                             <option value="Sala ATA - Sede">Sala ATA - Sede</option>
                             <option value="Sala de Aula - Sede">Sala de Aula - Sede</option>
                             <option value="Sala de Coordenação - Sede">Sala de Coordenação - Sede</option>
@@ -350,9 +351,12 @@
                             <option value="Sala de Aula - CD Urubu">Sala de Aula - CD Urubu</option>
                             <option value="Lab. Informática - CD Urubu">Lab. Informática - CD Urubu</option>
                             <option value="Sala de Coordenação - CD Urubu">Sala de Coordenação - CD Urubu</option>
-                            <option value="Lab. Informática - CD Pereira Barreto">Lab. Informática - CD Pereira Barreto</option>
-                            <option value="Sala de Coordenação - CD Pereira Barreto">Sala de Coordenação - CD Pereira Barreto</option>
-                            <option value="Lab. Informática - CD Sud Mennucci">Lab. Informática - CD Sud Mennucci</option>
+                            <option value="Lab. Informática - CD Pereira Barreto">Lab. Informática - CD Pereira Barreto
+                            </option>
+                            <option value="Sala de Coordenação - CD Pereira Barreto">Sala de Coordenação - CD Pereira
+                                Barreto</option>
+                            <option value="Lab. Informática - CD Sud Mennucci">Lab. Informática - CD Sud Mennucci
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -374,8 +378,10 @@
                     <div class="form-group">
                         <label for="barcode">Código de Barras</label>
                         <div style="display: flex; gap: 5px;">
-                            <input type="text" id="barcode" style="flex: 1;" placeholder="Aproxime o leitor ou use a câmera">
-                            <button type="button" id="btnScanTrigger" class="btn btn-sec" onclick="startScanner()">📷 Ler</button>
+                            <input type="text" id="barcode" style="flex: 1;"
+                                placeholder="Aproxime o leitor ou use a câmera">
+                            <button type="button" id="btnScanTrigger" class="btn btn-sec" onclick="startScanner()">📷
+                                Ler</button>
                         </div>
                     </div>
                 </div>
@@ -408,7 +414,8 @@
                 </div>
                 <div class="form-group" style="justify-content: flex-end; flex-direction: row; gap: 10px;">
                     <button class="btn btn-sec" onclick="window.print()">🖨️ Imprimir Relatório</button>
-                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar Backup</button>
+                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar
+                        Backup</button>
                 </div>
             </div>
 
@@ -437,10 +444,10 @@
         // ==========================================
         document.addEventListener('contextmenu', (event) => event.preventDefault());
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'F12' || 
-                (event.ctrlKey && event.shiftKey && event.key === 'I') || 
-                (event.ctrlKey && event.shiftKey && event.key === 'C') || 
-                (event.ctrlKey && event.key === 'u') || 
+            if (event.key === 'F12' ||
+                (event.ctrlKey && event.shiftKey && event.key === 'I') ||
+                (event.ctrlKey && event.shiftKey && event.key === 'C') ||
+                (event.ctrlKey && event.key === 'u') ||
                 (event.ctrlKey && event.key === 'U')) {
                 event.preventDefault();
             }
@@ -663,27 +670,46 @@
             const patrimonio = temPatrimonio ? document.getElementById('patrimonyCode').value : "N/A";
             const codigoBarras = temPatrimonio ? document.getElementById('barcode').value : "N/A";
 
-            try {
-                await db.collection("itens").add({
-                    nome: nome,
-                    categoria: categoria,
-                    status: status,
-                    local: local,
-                    temPatrimonio: temPatrimonio,
-                    patrimonio: patrimonio,
-                    codigoBarras: codigoBarras,
-                    dataCadastro: new Date().toISOString().split('T')[0]
-                });
+            
+                if (temPatrimonio && patrimonio !== "N/A") {
+                    try {
+                        // ATENÇÃO: Altere 'produtos' ou 'itens' para o nome real da sua coleção no Firestore
+                        const produtosRef = firebase.firestore().collection('itens');
 
-                alert("Item catalogado com sucesso!");
-                document.getElementById('itemForm').reset();
-                togglePatrimonyFields();
-                loadItems();
-            } catch (error) {
-                console.error(error);
-                alert("Erro: " + error.code + "\n\n" + error.message);
-            }
-        });
+                        // Faz uma busca por documentos onde o campo 'patrimonio' seja igual ao digitado
+                        const snapshot = await produtosRef.where('patrimonio', '==', patrimonio).get();
+
+                        if (!snapshot.empty) {
+                            // Se o snapshot não estiver vazio, significa que já existe!
+                            alert(`Erro: O número de patrimônio "${patrimonio}" já está cadastrado em outro item.`);
+                            return; // Para a execução aqui e não salva
+                        }
+                    } catch (erro) {
+                        console.error("Erro ao verificar patrimônio existente:", erro);
+                        alert("Erro ao validar o patrimônio. Tente novamente.");
+                        return;
+                    }
+                }
+
+                try {
+                    await db.collection("itens").add({
+                        nome: nome,
+                        categoria: categoria,
+                        status: status,
+                        local: local,
+                        temPatrimonio: temPatrimonio,
+                        patrimonio: patrimonio,
+                        codigoBarras: codigoBarras,
+                        dataCadastro: new Date().toISOString().split('T')[0]
+                    });
+
+                    alert("Item salvo com sucesso!");
+                    document.getElementById('itemForm').reset(); // Limpa o formulário
+                } catch (error) {
+                    console.error("Erro ao salvar o item:", error);
+                    alert("Erro ao salvar o item no banco de dados.");
+                }
+            });
 
         // ==========================================
         // RECUPERAR E FILTRAR ITENS (READ & SEARCH)
