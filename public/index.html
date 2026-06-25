@@ -873,37 +873,46 @@
         }
 
        // ==========================================
-        // FUNÇÃO DE BACKUP (DOWNLOAD JSON - APENAS ITENS)
+        // FUNÇÃO DE BACKUP (DOWNLOAD TXT - APENAS ITENS)
         // ==========================================
         async function exportBackup() {
             try {
-                // Busca apenas a coleção de itens que já está liberada no seu Firebase
+                // Busca a coleção de itens
                 const snapshot = await db.collection("itens").get();
-                const dados = [];
                 
+                // Monta o cabeçalho do arquivo texto
+                let txtContent = "=========================================\n";
+                txtContent += "     INVENTÁRIO ETEC - RELATÓRIO DE ITENS    \n";
+                txtContent += "=========================================\n\n";
+
                 snapshot.forEach(doc => {
-                    dados.push({ 
-                        id: doc.id, 
-                        ...doc.data() 
-                    });
+                    const item = doc.data();
+                    txtContent += `ID do Item: ${doc.id}\n`;
+                    txtContent += `Nome: ${item.nome || 'N/A'}\n`;
+                    txtContent += `Categoria: ${item.categoria || 'N/A'}\n`;
+                    txtContent += `Status: ${item.status || 'N/A'}\n`;
+                    txtContent += `Local: ${item.local || 'N/A'}\n`;
+                    txtContent += `Patrimônio: ${item.patrimonio || 'N/A'}\n`;
+                    txtContent += `Código de Barras: ${item.codigoBarras || 'N/A'}\n`;
+                    txtContent += `Data de Cadastro: ${item.dataCadastro || 'N/A'}\n`;
+                    txtContent += "-----------------------------------------\n";
                 });
 
-                // Transforma em string JSON estruturada
-                const jsonString = JSON.stringify(dados, null, 2);
-                const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
+                // Transforma em um Blob de texto puro (text/plain)
+                const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
                 
                 // Cria o link de download nativo
                 const downloadAnchor = document.createElement('a');
                 downloadAnchor.href = URL.createObjectURL(blob);
                 
                 const dataAtual = new Date().toISOString().split('T')[0];
-                downloadAnchor.setAttribute("download", `backup_inventario_etec_${dataAtual}.json`);
+                downloadAnchor.setAttribute("download", `backup_inventario_etec_${dataAtual}.txt`);
                 
                 document.body.appendChild(downloadAnchor);
                 downloadAnchor.click();
                 downloadAnchor.remove();
 
-                alert("✨ Backup dos itens gerado e baixado com sucesso!");
+                alert("✨ Relatório em TXT gerado e baixado com sucesso!");
             } catch (error) {
                 console.error("Erro no backup:", error);
                 alert("Falha ao gerar arquivo de backup: " + error.message);
