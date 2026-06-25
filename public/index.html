@@ -53,6 +53,14 @@
             overflow-x: auto;
         }
 
+        /* CONTAINER DOS BOTÕES DE LOGIN - ALINHAMENTO CENTRAL */
+        .botoes-login-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -237,10 +245,14 @@
             <label>Senha</label>
             <input type="password" id="loginPassword">
         </div>
-        <button class="btn" onclick="login()">
-            Entrar
-        </button>
-         <button  class="btn" type="button">Nova Conta</button>
+        
+        <div class="botoes-login-container">
+            <button class="btn" onclick="login()">
+                Entrar
+            </button>
+            <button class="btn btn-sec" type="button" onclick="criarConta()">
+                Nova Conta
+            </button>
         </div>
     </div>
 
@@ -420,10 +432,41 @@
             const email = document.getElementById("loginEmail").value;
             const password = document.getElementById("loginPassword").value;
 
+            if (!email || !password) {
+                alert("⚠️ Por favor, informe o e-mail e a senha para entrar.");
+                return;
+            }
+
             try {
                 await auth.signInWithEmailAndPassword(email, password);
             } catch (error) {
                 alert("Erro ao entrar:\n\n" + error.message);
+            }
+        }
+
+        // ==========================================
+        // CADASTRO DE NOVA CONTA (NOVO MÉTODO)
+        // ==========================================
+        async function criarConta() {
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
+
+            if (!email || !password) {
+                alert("⚠️ Por favor, digite um e-mail e uma senha nos campos acima para cadastrar a nova conta.");
+                return;
+            }
+
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+                alert("✨ Conta criada com sucesso! O acesso foi liberado.");
+            } catch (error) {
+                if (error.code === 'auth/email-already-in-use') {
+                    alert("⚠️ Este e-mail já está cadastrado no sistema!");
+                } else if (error.code === 'auth/weak-password') {
+                    alert("⚠️ A senha precisa ter pelo menos 6 caracteres.");
+                } else {
+                    alert("Erro ao criar conta:\n\n" + error.message);
+                }
             }
         }
 
@@ -447,7 +490,7 @@
         }
 
         // ==========================================
-        // NOVA LÓGICA DO SCANNER (QUAGGA JS)
+        // LÓGICA DO SCANNER (QUAGGA JS)
         // ==========================================
         function startScanner() {
             const readerElement = document.getElementById('reader');
@@ -525,7 +568,7 @@
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (!AudioCtx) return;
                 const context = new AudioCtx();
-                const osc = context.createOscillator();
+                osc = context.createOscillator();
                 osc.type = "sine";
                 osc.frequency.setValueAtTime(1200, context.currentTime);
                 osc.connect(context.destination);
@@ -577,6 +620,8 @@
             const queryText = document.getElementById('searchQuery').value.toLowerCase();
             const filterCategory = document.getElementById('filterCategory').value;
             const tbody = document.getElementById('itemsTableBody');
+            
+            if(!tbody) return;
             tbody.innerHTML = "<tr><td colspan='7'>Carregando itens...</td></tr>";
 
             try {
@@ -598,7 +643,6 @@
                     const item = doc.data();
                     const id = doc.id;
 
-                    // Fallbacks caso os registros antigos não possuam os novos campos no Firestore
                     const statusExibido = item.status || "Não Informado";
                     const localExibido = item.local || "Não Informado";
 
@@ -675,7 +719,7 @@
                     codigoBarras: novoCodigoBarras
                 });
 
-                alert("Item atualizado com sucesso!");
+                alert("Item updated com sucesso!");
                 loadItems();
             } catch (error) {
                 console.error("Erro ao atualizar: ", error);
