@@ -872,7 +872,7 @@
             }
         }
 
-          // ==========================================
+        // ==========================================
         // FUNÇÃO DE BACKUP (DOWNLOAD JSON)
         // ==========================================
         async function exportBackup() {
@@ -894,6 +894,23 @@
         }
 
         window.onload = loadItems;
+        // Escutador do Estado de Login
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                document.getElementById("loginScreen").style.display = "none";
+                document.getElementById("mainSystem").style.display = "block";
+                document.getElementById("btnLogout").style.display = "block";
+                loadItems();
+            } else {
+                document.getElementById("loginScreen").style.display = "block";
+                document.getElementById("mainSystem").style.display = "none";
+                document.getElementById("btnLogout").style.display = "none";
+                stopScanner();
+            }
+        });
+
+        window.onload = loadItems;   
     </script>
-    </body>
-    </html>
+</body>
+
+</html>
