@@ -440,7 +440,7 @@
 
     </div>
 
-   <script>
+    <script>
         // ==========================================
         // MEDIDAS DE PROTEÇÃO DO CÓDIGO FONTE
         // ==========================================
@@ -553,11 +553,11 @@
                 const nomeParaExibir = user.displayName || user.email.split('@')[0];
                 if (txtNome) txtNome.textContent = nomeParaExibir;
                 if (container) container.style.display = 'block';
-                
+
                 // Exibe o sistema principal e esconde o login
                 if (document.getElementById("mainSystem")) document.getElementById("mainSystem").style.display = "block";
                 if (document.getElementById("loginScreen")) document.getElementById("loginScreen").style.display = "none";
-                
+
                 loadItems();
             } else {
                 if (container) container.style.display = 'none';
@@ -654,7 +654,10 @@
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (!AudioCtx) return;
                 const context = new AudioCtx();
-                const osc = context.createOscillator(); // Corrigido aqui adicionando 'const'
+
+                // CORREÇÃO: Adicione 'const' para que a variável pertença apenas a esta função
+                const osc = context.createOscillator();
+
                 osc.type = "sine";
                 osc.frequency.setValueAtTime(1200, context.currentTime);
                 osc.connect(context.destination);
@@ -933,7 +936,7 @@
             try {
                 const snapshot = await db.collection("itens").get();
                 let csvContent = "data:text/csv;charset=utf-8,ID,Nome,Categoria,Status,Local,Patrimonio,CodigoBarras,DataCadastro\n";
-                
+
                 snapshot.forEach(doc => {
                     const item = doc.data();
                     const row = [
@@ -996,7 +999,7 @@
         }
 
         window.onload = loadItems;
-</script>
+    </script>
 </body>
 
 </html>
