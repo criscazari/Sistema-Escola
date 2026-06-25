@@ -9,7 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -894,48 +894,56 @@
         // ==========================================
         // FUNÇÃO DE BACKUP EM EXCEL (DOWNLOAD XLSX COM ABAS)
         // ==========================================
-       // ==========================================
-// FUNÇÃO DE BACKUP EM CSV (MAIS SIMPLES, SEM BIBLIOTECAS)
-// ==========================================
-async function exportBackup() {
-    try {
-        // 1. Busca os itens ativos no Firestore
-        snapshot = await db.collection("itens").get();
-        
-        // 2. Cria o cabeçalho do arquivo CSV (com BOM para o Excel abrir com acentos corretos)
-        let csvContent = "\uFEFF"; // Código BOM para indicar codificação UTF-8
-        csvContent += "ID do Documento;Nome do Item;Categoria;Status;Local;Patrimônio;Código de Barras\n";
+        // ==========================================
+        // FUNÇÃO DE BACKUP EM CSV (MAIS SIMPLES, SEM BIBLIOTECAS)
+        // ==========================================
+        async function exportBackup() {
+            try {
+                // 1. Busca os itens ativos no Firestore
+                snapshot = await db.collection("itens").get();
 
-        // 3. Percorre os itens e adiciona as linhas no CSV
-        snapshot.forEach(doc => {
-            item = doc.data();
-            
-            // Substitui eventuais pontos e vírgulas dos textos para não quebrar as colunas
-            nome = (item.nome || "").replace(/;/g, ",");
-            categoria = (item.categoria || "").replace(/;/g, ",");
-            status = (item.status || "").replace(/;/g, ",");
-            local = (item.local || "").replace(/;/g, ",");
-            patrimonio = (item.patrimonio || "").replace(/;/g, ",");
-            codigoBarras = (item.codigoBarras || "").replace(/;/g, ",");
+                // 2. Cria o cabeçalho do arquivo CSV (com BOM para o Excel abrir com acentos corretos)
+                let csvContent = "\uFEFF"; // Código BOM para indicar codificação UTF-8
+                csvContent += "ID do Documento;Nome do Item;Categoria;Status;Local;Patrimônio;Código de Barras\n";
 
-            csvContent += `${doc.id};${nome};${categoria};${status};${local};${patrimonio};${codigoBarras}\n`;
-        });
+                // 3. Percorre os itens e adiciona as linhas no CSV
+                snapshot.forEach(doc => {
+                    item = doc.data();
 
-        // 4. Cria o link de download nativo do navegador
-        dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
-        downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `backup_inventario_etec_${new Date().toISOString().split('T')[0]}.csv`);
-        
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
+                    // Substitui eventuais pontos e vírgulas dos textos para não quebrar as colunas
+                    nome = (item.nome || "").replace(/;/g, ",");
+                    categoria = (item.categoria || "").replace(/;/g, ",");
+                    status = (item.status || "").replace(/;/g, ",");
+                    local = (item.local || "").replace(/;/g, ",");
+                    patrimonio = (item.patrimonio || "").replace(/;/g, ",");
+                    codigoBarras = (item.codigoBarras || "").replace(/;/g, ",");
 
-    } catch (error) {
-        console.error("Erro ao gerar backup em CSV: ", error);
-        alert("Falha ao gerar arquivo de backup em CSV.");
-    }
-}
+                    csvContent += `${doc.id};${nome};${categoria};${status};${local};${patrimonio};${codigoBarras}\n`;
+                });
+
+                // 4. Cria o link de download nativo do navegador
+                dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+                downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `backup_inventario_etec_${new Date().toISOString().split('T')[0]}.csv`);
+
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+
+            } catch (error) {
+                console.error("Erro ao gerar backup em CSV: ", error);
+                alert("Falha ao gerar arquivo de backup em CSV.");
+            }
+            // Dentro da sua função exportBackup() atual, lá no finalzinho (antes do catch):
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            // Adicione esta linha para disparar o TXT logo em seguida:
+            await exportHistoricoTXT();
+
+        }
 
         // Escutador do Estado de Login Inicial
         auth.onAuthStateChanged((user) => {
