@@ -872,134 +872,65 @@
             }
         }
 
+       // ==========================================
+        // FUNÇÃO DE BACKUP COMPLETO (DOWNLOAD EM JSON)
         // ==========================================
-        // FUNÇÃO DE BACKUP EM EXCEL (DOWNLOAD XLSX COM ABAS)
-        // ==========================================
-      //  async function exportBackup() {
-      //      try {
-       //         const snapshotItens = await db.collection("itens").get();
-      //          const dadosItens = [];
-      //          snapshotItens.forEach(doc => {
-      //              const item = doc.data();
-      //              dadosItens.push({
-     //                   "ID do Documento": doc.id,
-     //                   "Nome do Item": item.nome || "",
-      //                  "Categoria": item.categoria || "",
-      //                  "Status": item.status || "",
-     //                   "Local": item.local || "",
-     //                   "Patrimônio": item.patrimonio || "",
-      //                  "Código de Barras": item.codigoBarras || "",
-     //                   "Data de Cadastro": item.dataCadastro || ""
-      //              });
-      //          });
-
-     //           const snapshotHistorico = await db.collection("historico").get();
-      //          const dadosHistorico = [];
-      //          snapshotHistorico.forEach(doc => {
-      //              const log = doc.data();
-      //              let dataHoraFormatada = "";
-      //              if (log.dataHora && typeof log.dataHora.toDate === 'function') {
-            //            dataHoraFormatada = log.dataHora.toDate().toLocaleString('pt-BR');
-           //         }
-
-             //       dadosHistorico.push({
-             //           "ID do Log": doc.id,
-             //           "Operação": log.tipoOperacao || "",
-           //             "ID do Item": log.itemId || "",
-          //              "Patrimônio": log.patrimonio || "",
-           //             "Item/Produto afetado": log.nomeItem || log.nomeNovo || log.nomeAnterior || "",
-         //               "Data e Hora": dataHoraFormatada
-           //         });
-          //      });
-
-          //      const wb = XLSX.utils.book_new();
-
-          //      const wsItens = XLSX.utils.json_to_sheet(dadosItens);
-       //         const wsHistorico = XLSX.utils.json_to_sheet(dadosHistorico);
-
-        //        XLSX.utils.book_append_sheet(wb, wsItens, "Inventário Ativo");
-       //         XLSX.utils.book_append_sheet(wb, wsHistorico, "Histórico de Logs");
-
-                const dataAtual = new Date().toISOString().split('T')[0];
-       //         XLSX.writeFile(wb, `backup_inventario_etec_${dataAtual}.xlsx`);
-
-       //     } catch (error) {
-       //         console.error("Erro ao gerar backup em Excel: ", error);
-       //         alert("Falha ao gerar arquivo de backup em Excel (.xlsx).");
-       //     }
-      //  }
-
-        // ==========================================
-        // EXPORTAÇÃO ADICIONAL (CSV E TXT)
-        // ==========================================
-        async function exportToCSV() {
+        async function exportToJSON() {
             try {
-                const snapshot = await db.collection("itens").get();
-                let csvContent = "data:text/csv;charset=utf-8,ID,Nome,Categoria,Status,Local,Patrimonio,CodigoBarras,DataCadastro\n";
-
-                snapshot.forEach(doc => {
-                    const item = doc.data();
-                    const row = [
-                        doc.id,
-                        `"${item.nome || ''}"`,
-                        `"${item.categoria || ''}"`,
-                        `"${item.status || ''}"`,
-                        `"${item.local || ''}"`,
-                        `"${item.patrimonio || ''}"`,
-                        `"${item.codigoBarras || ''}"`,
-                        `"${item.dataCadastro || ''}"`
-                    ].join(",");
-                    csvContent += row + "\n";
+                // 1. Busca os dados dos Itens
+                const snapshotItens = await db.collection("itens").get();
+                const dadosItens = [];
+                snapshotItens.forEach(doc => {
+                    dadosItens.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
                 });
 
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                const dataAtual = new Date().toISOString().split('T')[0];
-                link.setAttribute("download", `inventario_${dataAtual}.csv`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } catch (error) {
-                console.error("Erro ao exportar CSV:", error);
-            }
-        }
-
-        async function exportToTXT() {
-            try {
-                const snapshot = await db.collection("itens").get();
-                let txtContent = "=========================================\n";
-                txtContent += "      INVENTÁRIO ETEC - RELATÓRIO TXT    \n";
-                txtContent += "=========================================\n\n";
-
-                snapshot.forEach(doc => {
-                    const item = doc.data();
-                    txtContent += `ID: ${doc.id}\n`;
-                    txtContent += `Nome: ${item.nome || 'N/A'}\n`;
-                    txtContent += `Categoria: ${item.categoria || 'N/A'}\n`;
-                    txtContent += `Status: ${item.status || 'N/A'}\n`;
-                    txtContent += `Local: ${item.local || 'N/A'}\n`;
-                    txtContent += `Patrimônio: ${item.patrimonio || 'N/A'}\n`;
-                    txtContent += `Código de Barras: ${item.codigoBarras || 'N/A'}\n`;
-                    txtContent += `Data de Cadastro: ${item.dataCadastro || 'N/A'}\n`;
-                    txtContent += "-----------------------------------------\n";
+                // 2. Busca os dados do Histórico
+                const snapshotHistorico = await db.collection("historico").get();
+                const dadosHistorico = [];
+                snapshotHistorico.forEach(doc => {
+                    const log = doc.data();
+                    let dataHoraFormatada = "";
+                    if (log.dataHora && typeof log.dataHora.toDate === 'function') {
+                        dataHoraFormatada = log.dataHora.toDate().toISOString();
+                    }
+                    dadosHistorico.push({
+                        id: doc.id,
+                        ...log,
+                        dataHoraFormatada: dataHoraFormatada
+                    });
                 });
 
-                const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
+                // 3. Junta tudo em um único objeto estruturado
+                const backupCompleto = {
+                    escola: "Etec de Ilha Solteira",
+                    dataExportacao: new Date().toISOString(),
+                    inventarioAtivo: dadosItens,
+                    historicoLogs: dadosHistorico
+                };
+
+                // 4. Cria e dispara o download do arquivo JSON
+                const jsonString = JSON.stringify(backupCompleto, null, 2);
+                const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
                 const link = document.createElement("a");
+                
+                const dataAtual = new Date().toISOString().split('T')[0];
                 link.href = URL.createObjectURL(blob);
-                const dataAtual = new Date().toISOString().split('T')[0];
-                link.download = `inventario_${dataAtual}.txt`;
+                link.download = `backup_inventario_etec_${dataAtual}.json`;
+                
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+
+                alert("✨ Backup em JSON gerado e baixado com sucesso!");
+
             } catch (error) {
-                console.error("Erro ao exportar TXT:", error);
+                console.error("Erro ao exportar JSON:", error);
+                alert("Erro ao gerar o arquivo JSON: " + error.message);
             }
         }
 
         window.onload = loadItems;
     </script>
-</body>
-
-</html>
