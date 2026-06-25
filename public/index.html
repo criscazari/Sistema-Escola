@@ -749,7 +749,7 @@
                 }
 
 
-                const snapshot = await reference.get();
+                const snapshot = await reference.orderBy("dataCadastro", "desc").get();
 
                 tbody.innerHTML = "";
 
@@ -838,7 +838,7 @@
             }
 
         } 
-        
+
         // ==========================================
         // FUNÇÕES PARA EDITAR E EXCLUIR COM LOGS
         // ==========================================
