@@ -4,15 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <div style="background-color: #aa0000; color: white; padding: 15px; position: relative; text-align: center;">
-        <h1 style="margin: 0; font-size: 24px;">Etec de Ilha Solteira</h1>
-        <p style="margin: 5px 0 0 0; font-size: 14px;">Sistema de Catalogação e Inventário de Bens</p>
-
-        <div id="usuarioContainer" style="position: absolute; top: 15px; right: 20px; font-size: 14px; display: none;">
-            Olá, <span id="nomeUsuario" style="font-weight: bold;"></span> |
-            <a href="#" id="btnSair" style="color: white; margin-left: 5px; text-decoration: underline;">Sair</a>
-        </div>
-    </div>
+    <title>Etec Ilha Solteira - Sistema de Inventário</title>
     <link rel="icon" type="image/png" href="./icoEtec.png">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -230,17 +222,16 @@
 <body>
 
     <header>
-       <!-- <h1>Etec de Ilha Solteira</h1>
-        <p>Sistema de Catalogação e Inventário de Bens</p>
-        <button id="btnLogout" onclick="logout()" class="btn btn-sec no-print" style="
-            display: none;
-            position: absolute;
-            right: 20px;
-            bottom: 15px;
-            padding: 5px 12px;
-            font-size: 14px;">
-            Sair
-        </button> -->
+        <div style="background-color: #aa0000; color: white; padding: 15px; position: relative; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px;">Etec de Ilha Solteira</h1>
+            <p style="margin: 5px 0 0 0; font-size: 14px;">Sistema de Catalogação e Inventário de Bens</p>
+
+            <div id="usuarioContainer"
+                style="position: absolute; top: 15px; right: 20px; font-size: 14px; display: none;">
+                Olá, <span id="nomeUsuario" style="font-weight: bold;"></span> |
+                <a href="#" id="btnSair" style="color: white; margin-left: 5px; text-decoration: underline;">Sair</a>
+            </div>
+        </div>
     </header>
 
     <div id="loginScreen" class="card" style="max-width:400px; margin:50px auto;">
