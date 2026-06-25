@@ -875,59 +875,59 @@
         // ==========================================
         // FUNÇÃO DE BACKUP EM EXCEL (DOWNLOAD XLSX COM ABAS)
         // ==========================================
-        async function exportBackup() {
-            try {
-                const snapshotItens = await db.collection("itens").get();
-                const dadosItens = [];
-                snapshotItens.forEach(doc => {
-                    const item = doc.data();
-                    dadosItens.push({
-                        "ID do Documento": doc.id,
-                        "Nome do Item": item.nome || "",
-                        "Categoria": item.categoria || "",
-                        "Status": item.status || "",
-                        "Local": item.local || "",
-                        "Patrimônio": item.patrimonio || "",
-                        "Código de Barras": item.codigoBarras || "",
-                        "Data de Cadastro": item.dataCadastro || ""
-                    });
-                });
+      //  async function exportBackup() {
+      //      try {
+       //         const snapshotItens = await db.collection("itens").get();
+      //          const dadosItens = [];
+      //          snapshotItens.forEach(doc => {
+      //              const item = doc.data();
+      //              dadosItens.push({
+     //                   "ID do Documento": doc.id,
+     //                   "Nome do Item": item.nome || "",
+      //                  "Categoria": item.categoria || "",
+      //                  "Status": item.status || "",
+     //                   "Local": item.local || "",
+     //                   "Patrimônio": item.patrimonio || "",
+      //                  "Código de Barras": item.codigoBarras || "",
+     //                   "Data de Cadastro": item.dataCadastro || ""
+      //              });
+      //          });
 
-                const snapshotHistorico = await db.collection("historico").get();
-                const dadosHistorico = [];
-                snapshotHistorico.forEach(doc => {
-                    const log = doc.data();
-                    let dataHoraFormatada = "";
-                    if (log.dataHora && typeof log.dataHora.toDate === 'function') {
-                        dataHoraFormatada = log.dataHora.toDate().toLocaleString('pt-BR');
-                    }
+     //           const snapshotHistorico = await db.collection("historico").get();
+      //          const dadosHistorico = [];
+      //          snapshotHistorico.forEach(doc => {
+      //              const log = doc.data();
+      //              let dataHoraFormatada = "";
+      //              if (log.dataHora && typeof log.dataHora.toDate === 'function') {
+            //            dataHoraFormatada = log.dataHora.toDate().toLocaleString('pt-BR');
+           //         }
 
-                    dadosHistorico.push({
-                        "ID do Log": doc.id,
-                        "Operação": log.tipoOperacao || "",
-                        "ID do Item": log.itemId || "",
-                        "Patrimônio": log.patrimonio || "",
-                        "Item/Produto afetado": log.nomeItem || log.nomeNovo || log.nomeAnterior || "",
-                        "Data e Hora": dataHoraFormatada
-                    });
-                });
+             //       dadosHistorico.push({
+             //           "ID do Log": doc.id,
+             //           "Operação": log.tipoOperacao || "",
+           //             "ID do Item": log.itemId || "",
+          //              "Patrimônio": log.patrimonio || "",
+           //             "Item/Produto afetado": log.nomeItem || log.nomeNovo || log.nomeAnterior || "",
+         //               "Data e Hora": dataHoraFormatada
+           //         });
+          //      });
 
-                const wb = XLSX.utils.book_new();
+          //      const wb = XLSX.utils.book_new();
 
-                const wsItens = XLSX.utils.json_to_sheet(dadosItens);
-                const wsHistorico = XLSX.utils.json_to_sheet(dadosHistorico);
+          //      const wsItens = XLSX.utils.json_to_sheet(dadosItens);
+       //         const wsHistorico = XLSX.utils.json_to_sheet(dadosHistorico);
 
-                XLSX.utils.book_append_sheet(wb, wsItens, "Inventário Ativo");
-                XLSX.utils.book_append_sheet(wb, wsHistorico, "Histórico de Logs");
+        //        XLSX.utils.book_append_sheet(wb, wsItens, "Inventário Ativo");
+       //         XLSX.utils.book_append_sheet(wb, wsHistorico, "Histórico de Logs");
 
                 const dataAtual = new Date().toISOString().split('T')[0];
-                XLSX.writeFile(wb, `backup_inventario_etec_${dataAtual}.xlsx`);
+       //         XLSX.writeFile(wb, `backup_inventario_etec_${dataAtual}.xlsx`);
 
-            } catch (error) {
-                console.error("Erro ao gerar backup em Excel: ", error);
-                alert("Falha ao gerar arquivo de backup em Excel (.xlsx).");
-            }
-        }
+       //     } catch (error) {
+       //         console.error("Erro ao gerar backup em Excel: ", error);
+       //         alert("Falha ao gerar arquivo de backup em Excel (.xlsx).");
+       //     }
+      //  }
 
         // ==========================================
         // EXPORTAÇÃO ADICIONAL (CSV E TXT)
