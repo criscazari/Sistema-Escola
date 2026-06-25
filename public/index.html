@@ -872,20 +872,20 @@
             }
         }
 
-       // ==========================================
-        // FUNÇÃO DE BACKUP (DOWNLOAD TXT - APENAS ITENS)
         // ==========================================
-        async function exportBackup() {
+        // EXPORTAÇÃO COMPLETA EM TXT (COM HISTÓRICO)
+        // ==========================================
+        async function exportToTXT() {
             try {
-                // Busca a coleção de itens
-                const snapshot = await db.collection("itens").get();
-                
-                // Monta o cabeçalho do arquivo texto
+                // 1. Busca os dados dos itens
+                const snapshotItens = await db.collection("itens").get();
                 let txtContent = "=========================================\n";
-                txtContent += "     INVENTÁRIO ETEC - RELATÓRIO DE ITENS    \n";
+                txtContent += "     INVENTÁRIO ETEC - RELATÓRIO COMPLETO    \n";
                 txtContent += "=========================================\n\n";
+                txtContent += ">> ITENS CADASTRADOS:\n";
+                txtContent += "-----------------------------------------\n";
 
-                snapshot.forEach(doc => {
+                snapshotItens.forEach(doc => {
                     const item = doc.data();
                     txtContent += `ID do Item: ${doc.id}\n`;
                     txtContent += `Nome: ${item.nome || 'N/A'}\n`;
@@ -898,24 +898,47 @@
                     txtContent += "-----------------------------------------\n";
                 });
 
-                // Transforma em um Blob de texto puro (text/plain)
-                const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
-                
-                // Cria o link de download nativo
-                const downloadAnchor = document.createElement('a');
-                downloadAnchor.href = URL.createObjectURL(blob);
-                
-                const dataAtual = new Date().toISOString().split('T')[0];
-                downloadAnchor.setAttribute("download", `backup_inventario_etec_${dataAtual}.txt`);
-                
-                document.body.appendChild(downloadAnchor);
-                downloadAnchor.click();
-                downloadAnchor.remove();
+                // 2. Busca os dados do histórico (que agora está liberado!)
+                const snapshotHistorico = await db.collection("historico").get();
+                txtContent += "\n\n=========================================\n";
+                txtContent += ">> HISTÓRICO DE ALTERAÇÕES E LOGS:\n";
+                txtContent += "=========================================\n";
 
-                alert("✨ Relatório em TXT gerado e baixado com sucesso!");
+                if (snapshotHistorico.empty) {
+                    txtContent += "Nenhum histórico registrado até o momento.\n";
+                } else {
+                    snapshotHistorico.forEach(doc => {
+                        const log = doc.data();
+                        let dataHoraFormatada = "N/A";
+                        if (log.dataHora && typeof log.dataHora.toDate === 'function') {
+                            dataHoraFormatada = log.dataHora.toDate().toLocaleString('pt-BR');
+                        }
+
+                        txtContent += `ID do Log: ${doc.id}\n`;
+                        txtContent += `Operação: ${log.tipoOperacao || 'N/A'}\n`;
+                        txtContent += `ID do Item Afetado: ${log.itemId || 'N/A'}\n`;
+                        txtContent += `Patrimônio: ${log.patrimonio || 'N/A'}\n`;
+                        txtContent += `Produto Afetado: ${log.nomeItem || log.nomeNovo || log.nomeAnterior || 'N/A'}\n`;
+                        txtContent += `Data e Hora: ${dataHoraFormatada}\n`;
+                        txtContent += "-----------------------------------------\n";
+                    });
+                }
+
+                // 3. Cria o arquivo TXT e dispara o download nativo
+                const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+
+                const dataAtual = new Date().toISOString().split('T')[0];
+                link.download = `backup_inventario_etec_${dataAtual}.txt`;
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
             } catch (error) {
-                console.error("Erro no backup:", error);
-                alert("Falha ao gerar arquivo de backup: " + error.message);
+                console.error("Erro ao exportar TXT:", error);
+                alert("Erro ao gerar o relatório em TXT: " + error.message);
             }
         }
 
