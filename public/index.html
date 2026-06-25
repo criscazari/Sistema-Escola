@@ -894,66 +894,48 @@
         // ==========================================
         // FUNÇÃO DE BACKUP EM EXCEL (DOWNLOAD XLSX COM ABAS)
         // ==========================================
-        async function exportBackup() {
-            try {
-                // 1. Busca os itens ativos no Firestore
-                snapshotItens = await db.collection("itens").get();
-                dadosItens = [];
-                snapshotItens.forEach(doc => {
-                    item = doc.data();
-                    dadosItens.push({
-                        "ID do Documento": doc.id,
-                        "Nome do Item": item.nome || "",
-                        "Categoria": item.categoria || "",
-                        "Status": item.status || "",
-                        "Local": item.local || "",
-                        "Patrimônio": item.patrimonio || "",
-                        "Código de Barras": item.codigoBarras || "",
-                        "Data de Cadastro": item.dataCadastro || ""
-                    });
-                });
+       // ==========================================
+// FUNÇÃO DE BACKUP EM CSV (MAIS SIMPLES, SEM BIBLIOTECAS)
+// ==========================================
+async function exportBackup() {
+    try {
+        // 1. Busca os itens ativos no Firestore
+        snapshot = await db.collection("itens").get();
+        
+        // 2. Cria o cabeçalho do arquivo CSV (com BOM para o Excel abrir com acentos corretos)
+        let csvContent = "\uFEFF"; // Código BOM para indicar codificação UTF-8
+        csvContent += "ID do Documento;Nome do Item;Categoria;Status;Local;Patrimônio;Código de Barras\n";
 
-                // 2. Busca o histórico de alterações e exclusões
-                snapshotHistorico = await db.collection("historico").get();
-                dadosHistorico = [];
-                snapshotHistorico.forEach(doc => {
-                    log = doc.data();
-                    // Converte o timestamp do Firebase para uma data legível
-                    dataHoraFormatada = "";
-                    if (log.dataHora && typeof log.dataHora.toDate === 'function') {
-                        dataHoraFormatada = log.dataHora.toDate().toLocaleString('pt-BR');
-                    }
+        // 3. Percorre os itens e adiciona as linhas no CSV
+        snapshot.forEach(doc => {
+            item = doc.data();
+            
+            // Substitui eventuais pontos e vírgulas dos textos para não quebrar as colunas
+            nome = (item.nome || "").replace(/;/g, ",");
+            categoria = (item.categoria || "").replace(/;/g, ",");
+            status = (item.status || "").replace(/;/g, ",");
+            local = (item.local || "").replace(/;/g, ",");
+            patrimonio = (item.patrimonio || "").replace(/;/g, ",");
+            codigoBarras = (item.codigoBarras || "").replace(/;/g, ",");
 
-                    dadosHistorico.push({
-                        "ID do Log": doc.id,
-                        "Operação": log.tipoOperacao || "",
-                        "ID do Item": log.itemId || "",
-                        "Patrimônio": log.patrimonio || "",
-                        "Item/Produto afetado": log.nomeItem || log.nomeNovo || log.nomeAnterior || "",
-                        "Data e Hora": dataHoraFormatada
-                    });
-                });
+            csvContent += `${doc.id};${nome};${categoria};${status};${local};${patrimonio};${codigoBarras}\n`;
+        });
 
-                // 3. Cria um novo livro de trabalho (Workbook) do Excel
-                wb = XLSX.utils.book_new();
+        // 4. Cria o link de download nativo do navegador
+        dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+        downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `backup_inventario_etec_${new Date().toISOString().split('T')[0]}.csv`);
+        
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
 
-                // 4. Converte os dados estruturados para planilhas (Worksheets)
-                wsItens = XLSX.utils.json_to_sheet(dadosItens);
-                wsHistorico = XLSX.utils.json_to_sheet(dadosHistorico);
-
-                // 5. Adiciona as planilhas ao livro com nomes específicos para as abas
-                XLSX.utils.book_append_sheet(wb, wsItens, "Inventário Ativo");
-                XLSX.utils.book_append_sheet(wb, wsHistorico, "Histórico de Logs");
-
-                // 6. Gera o arquivo final e inicia o download automaticamente
-                dataAtual = new Date().toISOString().split('T')[0];
-                XLSX.writeFile(wb, `backup_inventario_etec_${dataAtual}.xlsx`);
-
-            } catch (error) {
-                console.error("Erro ao gerar backup em Excel: ", error);
-                alert("Falha ao gerar arquivo de backup em Excel (.xlsx).");
-            }
-        }
+    } catch (error) {
+        console.error("Erro ao gerar backup em CSV: ", error);
+        alert("Falha ao gerar arquivo de backup em CSV.");
+    }
+}
 
         // Escutador do Estado de Login Inicial
         auth.onAuthStateChanged((user) => {
