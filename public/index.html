@@ -718,72 +718,127 @@
         });
 
         // ==========================================
+
         // RECUPERAR E FILTRAR ITENS (READ & SEARCH)
+
         // ==========================================
+
         async function loadItems() {
+
             const queryText = document.getElementById('searchQuery').value.toLowerCase();
+
             const filterCategory = document.getElementById('filterCategory').value;
+
             const tbody = document.getElementById('itemsTableBody');
 
+
             if (!tbody) return;
+
             tbody.innerHTML = "<tr><td colspan='7'>Carregando itens...</td></tr>";
 
+
             try {
+
                 let reference = db.collection("itens");
 
+
                 if (filterCategory) {
+
                     reference = reference.where("categoria", "==", filterCategory);
+
                 }
 
-                const snapshot = await db.collection("itens").orderBy("dataCadastro", "desc").get();
+
+                const snapshot = await reference.get();
+
                 tbody.innerHTML = "";
 
+
                 if (snapshot.empty) {
+
                     tbody.innerHTML = "<tr><td colspan='7'>Nenhum item cadastrado ou encontrado.</td></tr>";
+
                     return;
+
                 }
+
 
                 snapshot.forEach(doc => {
+
                     const item = doc.data();
+
                     const id = doc.id;
 
+
                     const statusExibido = item.status || "Não Informado";
+
                     const localExibido = item.local || "Não Informado";
+
                     const patrimônioExibido = item.patrimonio || "N/A";
+
                     const codigoBarrasExibido = item.codigoBarras || "N/A";
 
+
                     if (item.nome.toLowerCase().includes(queryText) ||
+
                         localExibido.toLowerCase().includes(queryText) ||
+
                         patrimônioExibido.toLowerCase().includes(queryText) ||
+
                         codigoBarrasExibido.toLowerCase().includes(queryText)) {
 
+
                         const row = `
+
                             <tr>
+
                                 <td><b>${item.nome}</b></td>
+
                                 <td>${item.categoria}</td>
+
                                 <td><span style="font-weight: 500;">${statusExibido}</span></td>
+
                                 <td>${localExibido}</td>
+
                                 <td>${patrimônioExibido}</td>
+
                                 <td>${codigoBarrasExibido}</td>
+
                                 <td class="no-print">
+
                                     <button class="btn btn-sec" style="padding: 2px 8px; font-size: 13px; background-color: #2980b9;" onclick="editItem('${id}', '${item.nome}', '${statusExibido}', '${localExibido}', '${patrimônioExibido}', '${codigoBarrasExibido}')">✏️</button>
+
                                     <button class="btn btn-sec" style="padding: 2px 8px; font-size: 13px; background-color: #c0392b;" onclick="deleteItem('${id}')">🗑️</button>
+
                                 </td>
+
                             </tr>
+
                         `;
+
                         tbody.innerHTML += row;
+
                     }
+
                 });
 
-                if (tbody.innerHTML === "") {
-                    tbody.innerHTML = "<tr><td colspan='7'>Nenhum item corresponde à pesquisa.</td></tr>";
-                }
-            } catch (error) {
-                console.error("Erro ao carregar dados: ", error);
-                tbody.innerHTML = "<tr><td colspan='7'>Erro ao carregar os dados.</td></tr>";
-            }
-        }
 
+                if (tbody.innerHTML === "") {
+
+                    tbody.innerHTML = "<tr><td colspan='7'>Nenhum item corresponde à pesquisa.</td></tr>";
+
+                }
+
+            } catch (error) {
+
+                console.error("Erro ao carregar dados: ", error);
+
+                tbody.innerHTML = "<tr><td colspan='7'>Erro ao carregar os dados.</td></tr>";
+
+            }
+
+        } 
+        
         // ==========================================
         // FUNÇÕES PARA EDITAR E EXCLUIR COM LOGS
         // ==========================================
