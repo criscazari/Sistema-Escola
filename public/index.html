@@ -778,13 +778,12 @@
             }
         }
 
-        // ==========================================
+       // ==========================================
         // FUNÇÕES PARA EDITAR E EXCLUIR (UPDATE & DELETE) COM LOGS
         // ==========================================
         async function deleteItem(id) {
             if (confirm("Tem certeza que deseja excluir este item do inventário da Etec?")) {
                 try {
-                    // 1. Busca os dados atuais do item para guardar no histórico antes de excluir
                     const docRef = db.collection("itens").doc(id);
                     const docSnap = await docRef.get();
 
@@ -793,17 +792,15 @@
                         dadosAntigos = docSnap.data();
                     }
 
-                    // 2. Cria o registro de exclusão no histórico (invisível para o usuário)
                     await db.collection('historico').add({
                         tipoOperacao: 'EXCLUSAO',
                         itemId: id,
                         patrimonio: dadosAntigos.patrimonio || 'N/A',
                         nomeItem: dadosAntigos.nome || '',
-                        dadosDeletados: dadosAntigos, // Guarda todos os dados antigos para o backup
+                        dadosDeletados: dadosAntigos,
                         dataHora: firebase.firestore.FieldValue.serverTimestamp()
                     });
 
-                    // 3. Exclui permanentemente o item da coleção principal
                     await docRef.delete();
 
                     alert("Item removido com sucesso!");
@@ -831,7 +828,6 @@
             const novoCodigoBarras = prompt("Digite o novo código de barras:", codigoBarrasAtual);
             if (novoCodigoBarras === null) return;
 
-            // Estrutura os objetos com os dados antigos e novos para o log
             const dadosAntigos = {
                 nome: nomeAtual,
                 status: statusAtual,
@@ -849,10 +845,8 @@
             };
 
             try {
-                // 1. Atualiza o item na coleção principal
                 await db.collection("itens").doc(id).update(novosDados);
 
-                // 2. Cria o registro de alteração no histórico (invisível para o usuário)
                 await db.collection('historico').add({
                     tipoOperacao: 'ALTERACAO',
                     itemId: id,
@@ -871,92 +865,63 @@
                 alert("Erro ao atualizar o item.");
             }
         }
-        // ==========================================
-        // FUNÇÃO DE BACKUP (DOWNLOAD JSON)
-        // ==========================================
-        // async function exportBackup() {
-        //   try {
-        //       const snapshot = await db.collection("itens").get();
-        //       const dados = [];
-        //       snapshot.forEach(doc => dados.push({ id: doc.id, ...doc.data() }));
 
-        //       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dados, null, 2));
-        //      const downloadAnchor = document.createElement('a');
-        //      downloadAnchor.setAttribute("href", dataStr);
-        //       downloadAnchor.setAttribute("download", `backup_inventario_etec_${new Date().toISOString().split('T')[0]}.json`);
-        //      document.body.appendChild(downloadAnchor);
-        //       downloadAnchor.click();
-        //       downloadAnchor.remove();
-        //   } catch (error) {
-        //        alert("Falha ao gerar arquivo de backup.");
-        //   }
-        // }
         // ==========================================
         // FUNÇÃO DE BACKUP EM EXCEL (DOWNLOAD XLSX COM ABAS)
         // ==========================================
-        // ==========================================
-        // FUNÇÃO DE BACKUP EM CSV (MAIS SIMPLES, SEM BIBLIOTECAS)
-        // ==========================================
         async function exportBackup() {
             try {
-                // 1. Busca os itens ativos no Firestore
-                snapshot = await db.collection("itens").get();
-
-                // 2. Cria o cabeçalho do arquivo CSV (com BOM para o Excel abrir com acentos corretos)
-                let csvContent = "\uFEFF"; // Código BOM para indicar codificação UTF-8
-                csvContent += "ID do Documento;Nome do Item;Categoria;Status;Local;Patrimônio;Código de Barras\n";
-
-                // 3. Percorre os itens e adiciona as linhas no CSV
-                snapshot.forEach(doc => {
-                    item = doc.data();
-
-                    // Substitui eventuais pontos e vírgulas dos textos para não quebrar as colunas
-                    nome = (item.nome || "").replace(/;/g, ",");
-                    categoria = (item.categoria || "").replace(/;/g, ",");
-                    status = (item.status || "").replace(/;/g, ",");
-                    local = (item.local || "").replace(/;/g, ",");
-                    patrimonio = (item.patrimonio || "").replace(/;/g, ",");
-                    codigoBarras = (item.codigoBarras || "").replace(/;/g, ",");
-
-                    csvContent += `${doc.id};${nome};${categoria};${status};${local};${patrimonio};${codigoBarras}\n`;
+                const snapshotItens = await db.collection("itens").get();
+                const dadosItens = [];
+                snapshotItens.forEach(doc => {
+                    const item = doc.data();
+                    dadosItens.push({
+                        "ID do Documento": doc.id,
+                        "Nome do Item": item.nome || "",
+                        "Categoria": item.categoria || "",
+                        "Status": item.status || "",
+                        "Local": item.local || "",
+                        "Patrimônio": item.patrimonio || "",
+                        "Código de Barras": item.codigoBarras || "",
+                        "Data de Cadastro": item.dataCadastro || ""
+                    });
                 });
 
-                // 4. Cria o link de download nativo do navegador
-                dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
-                downloadAnchor = document.createElement('a');
-                downloadAnchor.setAttribute("href", dataStr);
-                downloadAnchor.setAttribute("download", `backup_inventario_etec_${new Date().toISOString().split('T')[0]}.csv`);
+                const snapshotHistorico = await db.collection("historico").get();
+                const dadosHistorico = [];
+                snapshotHistorico.forEach(doc => {
+                    const log = doc.data();
+                    let dataHoraFormatada = "";
+                    if (log.dataHora && typeof log.dataHora.toDate === 'function') {
+                        dataHoraFormatada = log.dataHora.toDate().toLocaleString('pt-BR');
+                    }
 
-                document.body.appendChild(downloadAnchor);
-                downloadAnchor.click();
-                downloadAnchor.remove();
+                    dadosHistorico.push({
+                        "ID do Log": doc.id,
+                        "Operação": log.tipoOperacao || "",
+                        "ID do Item": log.itemId || "",
+                        "Patrimônio": log.patrimonio || "",
+                        "Item/Produto afetado": log.nomeItem || log.nomeNovo || log.nomeAnterior || "",
+                        "Data e Hora": dataHoraFormatada
+                    });
+                });
+
+                const wb = XLSX.utils.book_new();
+
+                const wsItens = XLSX.utils.json_to_sheet(dadosItens);
+                const wsHistorico = XLSX.utils.json_to_sheet(dadosHistorico);
+
+                XLSX.utils.book_append_sheet(wb, wsItens, "Inventário Ativo");
+                XLSX.utils.book_append_sheet(wb, wsHistorico, "Histórico de Logs");
+
+                const dataAtual = new Date().toISOString().split('T')[0];
+                XLSX.writeFile(wb, `backup_inventario_etec_${dataAtual}.xlsx`);
 
             } catch (error) {
-                console.error("Erro ao gerar backup em CSV: ", error);
-                alert("Falha ao gerar arquivo de backup em CSV.");
+                console.error("Erro ao gerar backup em Excel: ", error);
+                alert("Falha ao gerar arquivo de backup em Excel (.xlsx).");
             }
-            // Dentro da sua função exportBackup() atual, lá no finalzinho (antes do catch):
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-
-            // Adicione esta linha para disparar o TXT logo em seguida:
-            await exportHistoricoTXT();
-
         }
-
-        // Escutador do Estado de Login Inicial
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                document.getElementById("loginScreen").style.display = "none";
-                document.getElementById("mainSystem").style.display = "block";
-                loadItems();
-            } else {
-                document.getElementById("loginScreen").style.display = "block";
-                document.getElementById("mainSystem").style.display = "none";
-                stopScanner();
-            }
-        });
 
         window.onload = loadItems;
     </script>
