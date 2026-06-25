@@ -444,6 +444,22 @@
 
     <script>
         // ==========================================
+        // MEDIDAS DE PROTEÇÃO DO CÓDIGO FONTE
+        // ==========================================
+        // Desativa o clique com o botão direito
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // Desativa o F12 e combinações de teclas de inspeção
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'F12' ||
+                (event.ctrlKey && event.shiftKey && event.key === 'I') ||
+                (event.ctrlKey && event.shiftKey && event.key === 'C') ||
+                (event.ctrlKey && event.key === 'U')) {
+                event.preventDefault();
+            }
+        });
+
+        // ==========================================
         // CONFIGURAÇÃO DO FIREBASE
         // ==========================================
         const firebaseConfig = {
@@ -459,6 +475,7 @@
 
         const db = firebase.firestore();
         const auth = firebase.auth();
+
 
         // Controladores globais de estado do Scanner (Quagga)
         let isScanning = false;
