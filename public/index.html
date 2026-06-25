@@ -440,7 +440,7 @@
 
     </div>
 
-    <script>
+   <script>
         // ==========================================
         // MEDIDAS DE PROTEÇÃO DO CÓDIGO FONTE
         // ==========================================
@@ -528,7 +528,7 @@
         document.addEventListener("keydown", function (event) {
             if (event.key === "Enter") {
                 const loginScreen = document.getElementById("loginScreen");
-                if (loginScreen.style.display !== "none") {
+                if (loginScreen && loginScreen.style.display !== "none") {
                     login();
                 }
             }
@@ -551,13 +551,18 @@
 
             if (user) {
                 const nomeParaExibir = user.displayName || user.email.split('@')[0];
-                txtNome.textContent = nomeParaExibir;
-                container.style.display = 'block';
+                if (txtNome) txtNome.textContent = nomeParaExibir;
+                if (container) container.style.display = 'block';
+                
+                // Exibe o sistema principal e esconde o login
+                if (document.getElementById("mainSystem")) document.getElementById("mainSystem").style.display = "block";
+                if (document.getElementById("loginScreen")) document.getElementById("loginScreen").style.display = "none";
+                
                 loadItems();
             } else {
-                container.style.display = 'none';
-                document.getElementById("loginScreen").style.display = "block";
-                document.getElementById("mainSystem").style.display = "none";
+                if (container) container.style.display = 'none';
+                if (document.getElementById("loginScreen")) document.getElementById("loginScreen").style.display = "block";
+                if (document.getElementById("mainSystem")) document.getElementById("mainSystem").style.display = "none";
             }
         });
 
@@ -649,7 +654,7 @@
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
                 if (!AudioCtx) return;
                 const context = new AudioCtx();
-                osc = context.createOscillator();
+                const osc = context.createOscillator(); // Corrigido aqui adicionando 'const'
                 osc.type = "sine";
                 osc.frequency.setValueAtTime(1200, context.currentTime);
                 osc.connect(context.destination);
@@ -672,19 +677,14 @@
             const patrimonio = temPatrimonio ? document.getElementById('patrimonyCode').value : "N/A";
             const codigoBarras = temPatrimonio ? document.getElementById('barcode').value : "N/A";
 
-
             if (temPatrimonio && patrimonio !== "N/A") {
                 try {
-                    // ATENÇÃO: Altere 'produtos' ou 'itens' para o nome real da sua coleção no Firestore
                     const produtosRef = firebase.firestore().collection('itens');
-
-                    // Faz uma busca por documentos onde o campo 'patrimonio' seja igual ao digitado
                     const snapshot = await produtosRef.where('patrimonio', '==', patrimonio).get();
 
                     if (!snapshot.empty) {
-                        // Se o snapshot não estiver vazio, significa que já existe!
                         alert(`Erro: O número de patrimônio "${patrimonio}" já está cadastrado em outro item.`);
-                        return; // Para a execução aqui e não salva
+                        return;
                     }
                 } catch (erro) {
                     console.error("Erro ao verificar patrimônio existente:", erro);
@@ -705,8 +705,9 @@
                     dataCadastro: new Date().toISOString().split('T')[0]
                 });
 
-                alert("Item salvo com sucesso!");
-                document.getElementById('itemForm').reset(); // Limpa o formulário
+                alert("Item saved successfully!");
+                document.getElementById('itemForm').reset();
+                loadItems(); // Recarrega a tabela após salvar
             } catch (error) {
                 console.error("Erro ao salvar o item:", error);
                 alert("Erro ao salvar o item no banco de dados.");
@@ -745,11 +746,13 @@
 
                     const statusExibido = item.status || "Não Informado";
                     const localExibido = item.local || "Não Informado";
+                    const patrimônioExibido = item.patrimonio || "N/A";
+                    const codigoBarrasExibido = item.codigoBarras || "N/A";
 
                     if (item.nome.toLowerCase().includes(queryText) ||
                         localExibido.toLowerCase().includes(queryText) ||
-                        item.patrimonio.toLowerCase().includes(queryText) ||
-                        item.codigoBarras.toLowerCase().includes(queryText)) {
+                        patrimônioExibido.toLowerCase().includes(queryText) ||
+                        codigoBarrasExibido.toLowerCase().includes(queryText)) {
 
                         const row = `
                             <tr>
@@ -757,10 +760,10 @@
                                 <td>${item.categoria}</td>
                                 <td><span style="font-weight: 500;">${statusExibido}</span></td>
                                 <td>${localExibido}</td>
-                                <td>${item.patrimonio}</td>
-                                <td>${item.codigoBarras}</td>
+                                <td>${patrimônioExibido}</td>
+                                <td>${codigoBarrasExibido}</td>
                                 <td class="no-print">
-                                    <button class="btn btn-sec" style="padding: 2px 8px; font-size: 13px; background-color: #2980b9;" onclick="editItem('${id}', '${item.nome}', '${statusExibido}', '${localExibido}', '${item.patrimonio}', '${item.codigoBarras}')">✏️</button>
+                                    <button class="btn btn-sec" style="padding: 2px 8px; font-size: 13px; background-color: #2980b9;" onclick="editItem('${id}', '${item.nome}', '${statusExibido}', '${localExibido}', '${patrimônioExibido}', '${codigoBarrasExibido}')">✏️</button>
                                     <button class="btn btn-sec" style="padding: 2px 8px; font-size: 13px; background-color: #c0392b;" onclick="deleteItem('${id}')">🗑️</button>
                                 </td>
                             </tr>
@@ -778,8 +781,8 @@
             }
         }
 
-       // ==========================================
-        // FUNÇÕES PARA EDITAR E EXCLUIR (UPDATE & DELETE) COM LOGS
+        // ==========================================
+        // FUNÇÕES PARA EDITAR E EXCLUIR COM LOGS
         // ==========================================
         async function deleteItem(id) {
             if (confirm("Tem certeza que deseja excluir este item do inventário da Etec?")) {
@@ -807,7 +810,7 @@
                     loadItems();
                 } catch (error) {
                     console.error("Erro ao excluir ou gerar log: ", error);
-                    alert("Não foi possível excluir o item.");
+                    alert("Não foi possível excluir the item.");
                 }
             }
         }
@@ -923,8 +926,77 @@
             }
         }
 
+        // ==========================================
+        // EXPORTAÇÃO ADICIONAL (CSV E TXT)
+        // ==========================================
+        async function exportToCSV() {
+            try {
+                const snapshot = await db.collection("itens").get();
+                let csvContent = "data:text/csv;charset=utf-8,ID,Nome,Categoria,Status,Local,Patrimonio,CodigoBarras,DataCadastro\n";
+                
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    const row = [
+                        doc.id,
+                        `"${item.nome || ''}"`,
+                        `"${item.categoria || ''}"`,
+                        `"${item.status || ''}"`,
+                        `"${item.local || ''}"`,
+                        `"${item.patrimonio || ''}"`,
+                        `"${item.codigoBarras || ''}"`,
+                        `"${item.dataCadastro || ''}"`
+                    ].join(",");
+                    csvContent += row + "\n";
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                const dataAtual = new Date().toISOString().split('T')[0];
+                link.setAttribute("download", `inventario_${dataAtual}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error("Erro ao exportar CSV:", error);
+            }
+        }
+
+        async function exportToTXT() {
+            try {
+                const snapshot = await db.collection("itens").get();
+                let txtContent = "=========================================\n";
+                txtContent += "      INVENTÁRIO ETEC - RELATÓRIO TXT    \n";
+                txtContent += "=========================================\n\n";
+
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    txtContent += `ID: ${doc.id}\n`;
+                    txtContent += `Nome: ${item.nome || 'N/A'}\n`;
+                    txtContent += `Categoria: ${item.categoria || 'N/A'}\n`;
+                    txtContent += `Status: ${item.status || 'N/A'}\n`;
+                    txtContent += `Local: ${item.local || 'N/A'}\n`;
+                    txtContent += `Patrimônio: ${item.patrimonio || 'N/A'}\n`;
+                    txtContent += `Código de Barras: ${item.codigoBarras || 'N/A'}\n`;
+                    txtContent += `Data de Cadastro: ${item.dataCadastro || 'N/A'}\n`;
+                    txtContent += "-----------------------------------------\n";
+                });
+
+                const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                const dataAtual = new Date().toISOString().split('T')[0];
+                link.download = `inventario_${dataAtual}.txt`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error("Erro ao exportar TXT:", error);
+            }
+        }
+
         window.onload = loadItems;
-    </script>
+</script>
 </body>
 
 </html>
