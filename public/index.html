@@ -253,19 +253,15 @@
 
 <body>
 
-    <header>
+    <div class="header-container">
+        <h1 class="header-title">Etec de Ilha Solteira</h1>
+        <p class="header-subtitle">Sistema de Catalogação e Inventário de Bens</p>
 
-        <div class="header-container">
-            <h1 class="header-title">Etec de Ilha Solteira</h1>
-            <p class="header-subtitle">Sistema de Catalogação e Inventário de Bens</p>
-
-            <div id="usuarioContainer" class="user-container">
-                Olá, <span id="nomeUsuario" class="user-name"></span> |
-                <a href="#" id="btnSair" class="btn-sair">Sair</a>
-            </div>
+        <div id="usuarioContainer" class="user-container">
+            Olá, <span id="nomeUsuario" class="user-name"></span> |
+            <a href="#" id="btnSair" class="btn-sair">Sair</a>
         </div>
-
-    </header>
+    </div>
 
     <div id="loginScreen" class="card" style="max-width:400px; margin:50px auto;">
         <h2>Login do Sistema</h2>
@@ -340,8 +336,7 @@
                             <option value="Lab. Mecânica - Sede">Lab. Mecânica - Sede</option>
                             <option value="Lab. Química - Sede">Lab. Química - Sede</option>
                             <option value="Protocolo - Sede">Protocolo - Sede</option>
-                            <option value="Sala Antigo Servidor / Arquivo Morto">Sala Antigo Servidor / Arquivo Morto
-                            </option>
+                            <option value="Sala Antigo Servidor / Arquivo Morto">Sala Antigo Servidor / Arquivo Morto</option>
                             <option value="Sala ATA - Sede">Sala ATA - Sede</option>
                             <option value="Sala de Aula - Sede">Sala de Aula - Sede</option>
                             <option value="Sala de Coordenação - Sede">Sala de Coordenação - Sede</option>
@@ -355,12 +350,9 @@
                             <option value="Sala de Aula - CD Urubu">Sala de Aula - CD Urubu</option>
                             <option value="Lab. Informática - CD Urubu">Lab. Informática - CD Urubu</option>
                             <option value="Sala de Coordenação - CD Urubu">Sala de Coordenação - CD Urubu</option>
-                            <option value="Lab. Informática - CD Pereira Barreto">Lab. Informática - CD Pereira Barreto
-                            </option>
-                            <option value="Sala de Coordenação - CD Pereira Barreto">Sala de Coordenação - CD Pereira
-                                Barreto</option>
-                            <option value="Lab. Informática - CD Sud Mennucci">Lab. Informática - CD Sud Mennucci
-                            </option>
+                            <option value="Lab. Informática - CD Pereira Barreto">Lab. Informática - CD Pereira Barreto</option>
+                            <option value="Sala de Coordenação - CD Pereira Barreto">Sala de Coordenação - CD Pereira Barreto</option>
+                            <option value="Lab. Informática - CD Sud Mennucci">Lab. Informática - CD Sud Mennucci</option>
                         </select>
                     </div>
                 </div>
@@ -382,10 +374,8 @@
                     <div class="form-group">
                         <label for="barcode">Código de Barras</label>
                         <div style="display: flex; gap: 5px;">
-                            <input type="text" id="barcode" style="flex: 1;"
-                                placeholder="Aproxime o leitor ou use a câmera">
-                            <button type="button" id="btnScanTrigger" class="btn btn-sec" onclick="startScanner()">📷
-                                Ler</button>
+                            <input type="text" id="barcode" style="flex: 1;" placeholder="Aproxime o leitor ou use a câmera">
+                            <button type="button" id="btnScanTrigger" class="btn btn-sec" onclick="startScanner()">📷 Ler</button>
                         </div>
                     </div>
                 </div>
@@ -418,8 +408,7 @@
                 </div>
                 <div class="form-group" style="justify-content: flex-end; flex-direction: row; gap: 10px;">
                     <button class="btn btn-sec" onclick="window.print()">🖨️ Imprimir Relatório</button>
-                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar
-                        Backup</button>
+                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar Backup</button>
                 </div>
             </div>
 
@@ -446,14 +435,12 @@
         // ==========================================
         // MEDIDAS DE PROTEÇÃO DO CÓDIGO FONTE
         // ==========================================
-        // Desativa o clique com o botão direito
-        document.addEventListener('contextmenu', event => event.preventDefault());
-
-        // Desativa o F12 e combinações de teclas de inspeção
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'F12' ||
-                (event.ctrlKey && event.shiftKey && event.key === 'I') ||
-                (event.ctrlKey && event.shiftKey && event.key === 'C') ||
+        document.addEventListener('contextmenu', (event) => event.preventDefault());
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'F12' || 
+                (event.ctrlKey && event.shiftKey && event.key === 'I') || 
+                (event.ctrlKey && event.shiftKey && event.key === 'C') || 
+                (event.ctrlKey && event.key === 'u') || 
                 (event.ctrlKey && event.key === 'U')) {
                 event.preventDefault();
             }
@@ -476,9 +463,13 @@
         const db = firebase.firestore();
         const auth = firebase.auth();
 
+        // GERENCIAMENTO DE SESSÃO: Desloga automaticamente ao fechar a aba
+        auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+            .catch((error) => {
+                console.error("Erro ao aplicar persistência de sessão:", error);
+            });
 
-        // Controladores globais de estado do Scanner (Quagga)
-        isScanning = false;
+        let isScanning = false;
 
         // ==========================================
         // LOGIN
@@ -499,16 +490,8 @@
             }
         }
 
-        // GERENCIAMENTO DE SESSÃO: Desloga automaticamente ao fechar a aba
-        auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
-            .catch((error) => {
-                console.error("Erro ao aplicar persistência de sessão:", error);
-            });
-
-        let isScanning = false;
-
         // ==========================================
-        // CADASTRO DE NOVA CONTA (NOVO MÉTODO)
+        // CADASTRO DE NOVA CONTA
         // ==========================================
         async function criarConta() {
             const email = document.getElementById("loginEmail").value;
@@ -552,28 +535,26 @@
             if (!hasPatrimony) stopScanner();
         }
 
-        // Monitora o estado da autenticação (se o usuário está logado ou não)
-        firebase.auth().onAuthStateChanged((user) => {
+        // Monitora o estado da autenticação
+        auth.onAuthStateChanged((user) => {
             const container = document.getElementById('usuarioContainer');
             const txtNome = document.getElementById('nomeUsuario');
 
             if (user) {
-                // Se o usuário tiver um 'displayName' (Nome cadastrado), mostra o nome. 
-                // Caso contrário, mostra a primeira parte do e-mail (antes do @).
                 const nomeParaExibir = user.displayName || user.email.split('@')[0];
-
                 txtNome.textContent = nomeParaExibir;
-                container.style.display = 'block'; // Mostra o container no canto direito
+                container.style.display = 'block';
+                loadItems();
             } else {
-                container.style.display = 'none'; // Esconde se não houver usuário logado
+                container.style.display = 'none';
+                document.getElementById("loginScreen").style.display = "block";
+                document.getElementById("mainSystem").style.display = "none";
             }
         });
 
-        // Lógica para o botão de Sair (Logout)
         document.getElementById('btnSair').addEventListener('click', (e) => {
             e.preventDefault();
-            firebase.auth().signOut().then(() => {
-                // Opcional: Redirecionar para a tela de login ou recarregar a página
+            auth.signOut().then(() => {
                 window.location.reload();
             }).catch((error) => {
                 console.error("Erro ao sair:", error);
@@ -810,7 +791,7 @@
                     codigoBarras: novoCodigoBarras
                 });
 
-                alert("Item updated com sucesso!");
+                alert("Item atualizado com sucesso!");
                 loadItems();
             } catch (error) {
                 console.error("Erro ao atualizar: ", error);
@@ -839,17 +820,15 @@
             }
         }
 
-        // Escutador do Estado de Login
+        // Escutador do Estado de Login Inicial
         auth.onAuthStateChanged((user) => {
             if (user) {
                 document.getElementById("loginScreen").style.display = "none";
                 document.getElementById("mainSystem").style.display = "block";
-                document.getElementById("btnLogout").style.display = "block";
                 loadItems();
             } else {
                 document.getElementById("loginScreen").style.display = "block";
                 document.getElementById("mainSystem").style.display = "none";
-                document.getElementById("btnLogout").style.display = "none";
                 stopScanner();
             }
         });
