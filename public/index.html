@@ -478,7 +478,7 @@
 
 
         // Controladores globais de estado do Scanner (Quagga)
-        let isScanning = false;
+        isScanning = false;
 
         // ==========================================
         // LOGIN
@@ -498,6 +498,14 @@
                 alert("Erro ao entrar:\n\n" + error.message);
             }
         }
+
+        // GERENCIAMENTO DE SESSÃO: Desloga automaticamente ao fechar a aba
+        auth.setPersistence(firebase.auth.Auth.Persistence.SESSION)
+            .catch((error) => {
+                console.error("Erro ao aplicar persistência de sessão:", error);
+            });
+
+        let isScanning = false;
 
         // ==========================================
         // CADASTRO DE NOVA CONTA (NOVO MÉTODO)
