@@ -4,12 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Etec Ilha Solteira - Sistema de Inventário</title>
+    <div style="background-color: #aa0000; color: white; padding: 15px; position: relative; text-align: center;">
+        <h1 style="margin: 0; font-size: 24px;">Etec de Ilha Solteira</h1>
+        <p style="margin: 5px 0 0 0; font-size: 14px;">Sistema de Catalogação e Inventário de Bens</p>
+
+        <div id="usuarioContainer" style="position: absolute; top: 15px; right: 20px; font-size: 14px; display: none;">
+            Olá, <span id="nomeUsuario" style="font-weight: bold;"></span> |
+            <a href="#" id="btnSair" style="color: white; margin-left: 5px; text-decoration: underline;">Sair</a>
+        </div>
+    </div>
     <link rel="icon" type="image/png" href="./icoEtec.png">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
 
     <style>
@@ -245,7 +253,7 @@
             <label>Senha</label>
             <input type="password" id="loginPassword">
         </div>
-        
+
         <div class="botoes-login-container">
             <button class="btn" onclick="login()">
                 Entrar
@@ -308,7 +316,8 @@
                             <option value="Lab. Mecânica - Sede">Lab. Mecânica - Sede</option>
                             <option value="Lab. Química - Sede">Lab. Química - Sede</option>
                             <option value="Protocolo - Sede">Protocolo - Sede</option>
-                            <option value="Sala Antigo Servidor / Arquivo Morto">Sala Antigo Servidor / Arquivo Morto</option>
+                            <option value="Sala Antigo Servidor / Arquivo Morto">Sala Antigo Servidor / Arquivo Morto
+                            </option>
                             <option value="Sala ATA - Sede">Sala ATA - Sede</option>
                             <option value="Sala de Aula - Sede">Sala de Aula - Sede</option>
                             <option value="Sala de Coordenação - Sede">Sala de Coordenação - Sede</option>
@@ -322,9 +331,12 @@
                             <option value="Sala de Aula - CD Urubu">Sala de Aula - CD Urubu</option>
                             <option value="Lab. Informática - CD Urubu">Lab. Informática - CD Urubu</option>
                             <option value="Sala de Coordenação - CD Urubu">Sala de Coordenação - CD Urubu</option>
-                            <option value="Lab. Informática - CD Pereira Barreto">Lab. Informática - CD Pereira Barreto</option>
-                            <option value="Sala de Coordenação - CD Pereira Barreto">Sala de Coordenação - CD Pereira Barreto</option>
-                            <option value="Lab. Informática - CD Sud Mennucci">Lab. Informática - CD Sud Mennucci</option>
+                            <option value="Lab. Informática - CD Pereira Barreto">Lab. Informática - CD Pereira Barreto
+                            </option>
+                            <option value="Sala de Coordenação - CD Pereira Barreto">Sala de Coordenação - CD Pereira
+                                Barreto</option>
+                            <option value="Lab. Informática - CD Sud Mennucci">Lab. Informática - CD Sud Mennucci
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -348,7 +360,8 @@
                         <div style="display: flex; gap: 5px;">
                             <input type="text" id="barcode" style="flex: 1;"
                                 placeholder="Aproxime o leitor ou use a câmera">
-                            <button type="button" id="btnScanTrigger" class="btn btn-sec" onclick="startScanner()">📷 Ler</button>
+                            <button type="button" id="btnScanTrigger" class="btn btn-sec" onclick="startScanner()">📷
+                                Ler</button>
                         </div>
                     </div>
                 </div>
@@ -381,7 +394,8 @@
                 </div>
                 <div class="form-group" style="justify-content: flex-end; flex-direction: row; gap: 10px;">
                     <button class="btn btn-sec" onclick="window.print()">🖨️ Imprimir Relatório</button>
-                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar Backup</button>
+                    <button class="btn btn-sec" style="background-color: #27ae60;" onclick="exportBackup()">💾 Exportar
+                        Backup</button>
                 </div>
             </div>
 
@@ -486,8 +500,36 @@
         function togglePatrimonyFields() {
             const hasPatrimony = document.getElementById('hasPatrimony').checked;
             document.getElementById('patrimonyFields').style.display = hasPatrimony ? 'grid' : 'none';
-            if(!hasPatrimony) stopScanner();
+            if (!hasPatrimony) stopScanner();
         }
+
+        // Monitora o estado da autenticação (se o usuário está logado ou não)
+        firebase.auth().onAuthStateChanged((user) => {
+            const container = document.getElementById('usuarioContainer');
+            const txtNome = document.getElementById('nomeUsuario');
+
+            if (user) {
+                // Se o usuário tiver um 'displayName' (Nome cadastrado), mostra o nome. 
+                // Caso contrário, mostra a primeira parte do e-mail (antes do @).
+                const nomeParaExibir = user.displayName || user.email.split('@')[0];
+
+                txtNome.textContent = nomeParaExibir;
+                container.style.display = 'block'; // Mostra o container no canto direito
+            } else {
+                container.style.display = 'none'; // Esconde se não houver usuário logado
+            }
+        });
+
+        // Lógica para o botão de Sair (Logout)
+        document.getElementById('btnSair').addEventListener('click', (e) => {
+            e.preventDefault();
+            firebase.auth().signOut().then(() => {
+                // Opcional: Redirecionar para a tela de login ou recarregar a página
+                window.location.reload();
+            }).catch((error) => {
+                console.error("Erro ao sair:", error);
+            });
+        });
 
         // ==========================================
         // LÓGICA DO SCANNER (QUAGGA JS)
@@ -553,13 +595,13 @@
         function stopScanner() {
             const readerElement = document.getElementById('reader');
             const btnTrigger = document.getElementById('btnScanTrigger');
-            
+
             try {
                 Quagga.stop();
-            } catch(e) {}
+            } catch (e) { }
 
-            if(readerElement) readerElement.style.display = 'none';
-            if(btnTrigger) btnTrigger.innerText = "📷 Ler";
+            if (readerElement) readerElement.style.display = 'none';
+            if (btnTrigger) btnTrigger.innerText = "📷 Ler";
             isScanning = false;
         }
 
@@ -620,8 +662,8 @@
             const queryText = document.getElementById('searchQuery').value.toLowerCase();
             const filterCategory = document.getElementById('filterCategory').value;
             const tbody = document.getElementById('itemsTableBody');
-            
-            if(!tbody) return;
+
+            if (!tbody) return;
             tbody.innerHTML = "<tr><td colspan='7'>Carregando itens...</td></tr>";
 
             try {
