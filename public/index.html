@@ -873,72 +873,40 @@
         }
 
         // ==========================================
-        // EXPORTAÇÃO COMPLETA EM TXT (COM HISTÓRICO)
+        // FUNÇÃO DE BACKUP (DOWNLOAD JSON - APENAS ITENS)
         // ==========================================
-        async function exportToTXT() {
+        async function exportBackup() {
             try {
-                // 1. Busca os dados dos itens
-                const snapshotItens = await db.collection("itens").get();
-                let txtContent = "=========================================\n";
-                txtContent += "     INVENTÁRIO ETEC - RELATÓRIO COMPLETO    \n";
-                txtContent += "=========================================\n\n";
-                txtContent += ">> ITENS CADASTRADOS:\n";
-                txtContent += "-----------------------------------------\n";
+                // Busca apenas a coleção de itens que já está liberada no seu Firebase
+                const snapshot = await db.collection("itens").get();
+                const dados = [];
 
-                snapshotItens.forEach(doc => {
-                    const item = doc.data();
-                    txtContent += `ID do Item: ${doc.id}\n`;
-                    txtContent += `Nome: ${item.nome || 'N/A'}\n`;
-                    txtContent += `Categoria: ${item.categoria || 'N/A'}\n`;
-                    txtContent += `Status: ${item.status || 'N/A'}\n`;
-                    txtContent += `Local: ${item.local || 'N/A'}\n`;
-                    txtContent += `Patrimônio: ${item.patrimonio || 'N/A'}\n`;
-                    txtContent += `Código de Barras: ${item.codigoBarras || 'N/A'}\n`;
-                    txtContent += `Data de Cadastro: ${item.dataCadastro || 'N/A'}\n`;
-                    txtContent += "-----------------------------------------\n";
+                snapshot.forEach(doc => {
+                    dados.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
                 });
 
-                // 2. Busca os dados do histórico (que agora está liberado!)
-                const snapshotHistorico = await db.collection("historico").get();
-                txtContent += "\n\n=========================================\n";
-                txtContent += ">> HISTÓRICO DE ALTERAÇÕES E LOGS:\n";
-                txtContent += "=========================================\n";
+                // Transforma em string JSON estruturada
+                const jsonString = JSON.stringify(dados, null, 2);
+                const blob = new Blob([jsonString], { type: "application/json;charset=utf-8" });
 
-                if (snapshotHistorico.empty) {
-                    txtContent += "Nenhum histórico registrado até o momento.\n";
-                } else {
-                    snapshotHistorico.forEach(doc => {
-                        const log = doc.data();
-                        let dataHoraFormatada = "N/A";
-                        if (log.dataHora && typeof log.dataHora.toDate === 'function') {
-                            dataHoraFormatada = log.dataHora.toDate().toLocaleString('pt-BR');
-                        }
-
-                        txtContent += `ID do Log: ${doc.id}\n`;
-                        txtContent += `Operação: ${log.tipoOperacao || 'N/A'}\n`;
-                        txtContent += `ID do Item Afetado: ${log.itemId || 'N/A'}\n`;
-                        txtContent += `Patrimônio: ${log.patrimonio || 'N/A'}\n`;
-                        txtContent += `Produto Afetado: ${log.nomeItem || log.nomeNovo || log.nomeAnterior || 'N/A'}\n`;
-                        txtContent += `Data e Hora: ${dataHoraFormatada}\n`;
-                        txtContent += "-----------------------------------------\n";
-                    });
-                }
-
-                // 3. Cria o arquivo TXT e dispara o download nativo
-                const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8" });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
+                // Cria o link de download nativo
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.href = URL.createObjectURL(blob);
 
                 const dataAtual = new Date().toISOString().split('T')[0];
-                link.download = `backup_inventario_etec_${dataAtual}.txt`;
+                downloadAnchor.setAttribute("download", `backup_inventario_etec_${dataAtual}.json`);
 
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
 
+                alert("✨ Backup dos itens gerado e baixado com sucesso!");
             } catch (error) {
-                console.error("Erro ao exportar TXT:", error);
-                alert("Erro ao gerar o relatório em TXT: " + error.message);
+                console.error("Erro no backup:", error);
+                alert("Falha ao gerar arquivo de backup: " + error.message);
             }
         }
 
